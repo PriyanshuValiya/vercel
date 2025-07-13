@@ -7,7 +7,7 @@ services:
     ports:
       - "4500:4500"
     env_file:
-      - .env
+      - server/.env
     volumes:
       - ./server:/app
     restart: always
@@ -18,7 +18,7 @@ services:
     ports:
       - "4000:4000"
     env_file:
-      - .env
+      - upload-service/.env
     volumes:
       - ./upload-service:/app
     depends_on:
@@ -31,7 +31,7 @@ services:
     ports:
       - "2805:2805"
     env_file:
-      - .env
+      - runner-service/.env
     volumes:
       - ./runner-service:/app
     depends_on:
