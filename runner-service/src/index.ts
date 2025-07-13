@@ -167,7 +167,7 @@ async function startPolling() {
   setInterval(async () => {
     const jobString = await redis.rpop("build-queue");
     if (!jobString || jobString === "null") {
-      console.log("@ No job found in Redis...");
+      // console.log("@ No job found in Redis...");
       return;
     }
 
