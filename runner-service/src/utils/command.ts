@@ -1,30 +1,41 @@
-import { spawn } from "child_process";
+import { exec } from "child_process";
 import { updateLogs } from "./logger";
+import util from "util";
 
-export function runCommandWithLogs(
+const execPromise = util.promisify(exec);
+
+export async function runCommandWithLogs(
   command: string,
   args: string[],
   cwd: string,
   projectId: string
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd, shell: true });
-
-    child.stdout.on("data", async (data) => {
-      const line = data.toString().trim();
-      console.log(line);
-      await updateLogs(projectId, line);
+  const fullCommand = `${command} ${args.join(" ")}`;
+  try {
+    const { stdout, stderr } = await execPromise(fullCommand, {
+      cwd,
+      maxBuffer: 1024 * 1024 * 10, 
     });
 
-    child.stderr.on("data", async (data) => {
-      const line = data.toString().trim();
-      console.error(line);
-      await updateLogs(projectId, line);
-    });
+    if (stdout) {
+      const lines = stdout.trim().split("\n");
+      for (const line of lines) {
+        console.log(line);
+        await updateLogs(projectId, line.trim());
+      }
+    }
 
-    child.on("close", (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`${command} failed with exit code ${code}`));
-    });
-  });
+    if (stderr) {
+      const lines = stderr.trim().split("\n");
+      for (const line of lines) {
+        console.error(line);
+        await updateLogs(projectId, line.trim());
+      }
+    }
+  } catch (err: any) {
+    const errMsg = err.stderr || err.message || "Unknown error";
+    console.error("# Command failed:", errMsg);
+    await updateLogs(projectId, `# ${fullCommand} failed:\n${errMsg}`);
+    throw new Error(`${fullCommand} failed`);
+  }
 }
