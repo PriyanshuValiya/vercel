@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./server
+    container_name: vercel_server
+    ports:
+      - "4500:4500"
+    env_file:
+      - .env
+    volumes:
+      - ./server:/app
+    restart: always
+
+  upload-service:
+    build: ./upload-service
+    container_name: vercel_upload_service
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    volumes:
+      - ./upload-service:/app
+    depends_on:
+      - backend
+    restart: always
+
+  runner-service:
+    build: ./runner-service
+    container_name: vercel_runner_service
+    ports:
+      - "2805:2805"
+    env_file:
+      - .env
+    volumes:
+      - ./runner-service:/app
+    depends_on:
+      - upload-service
+      - backend
+    restart: always
+
+  # frontend:
+  #   build: ./frontend
+  #   container_name: vercel_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./frontend:/app
+  #   restart: always
+
+  # nginx:
+  #   image: nginx:latest
+  #   container_name: vercel_nginx
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx/conf.d:/etc/nginx/conf.d
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - frontend
+  #     - backend
+  #   restart: always
