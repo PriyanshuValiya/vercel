@@ -8,8 +8,6 @@ services:
       - "4500:4500"
     env_file:
       - server/.env
-    volumes:
-      - ./server:/app
     restart: always
 
   upload-service:
@@ -19,8 +17,6 @@ services:
       - "4000:4000"
     env_file:
       - upload-service/.env
-    volumes:
-      - ./upload-service:/app
     depends_on:
       - backend
     restart: always
@@ -33,29 +29,8 @@ services:
     env_file:
       - runner-service/.env
     volumes:
-      - ./runner-service:/app
-      - /var/run/docker.sock:/var/run/docker.sock  
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - upload-service
       - backend
     restart: always
-
-  # frontend:
-  #   build: ./frontend
-  #   container_name: vercel_frontend
-  #   ports:
-  #     - "3000:3000"
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./frontend:/app
-  #   restart: always
-
-  # nginx:
-  #   image: nginx:latest
-  #   container_name: vercel_nginx
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx/conf.d:/etc/nginx/conf.d
-  #     - ./nginx/nginx.conf:/etc/nginx/ngi
