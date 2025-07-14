@@ -12,7 +12,12 @@ import fs from "fs-extra";
 import { runCommandWithLogs } from "./utils/command";
 import { updateLogs } from "./utils/logger";
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.BASE_IP_URL || !process.env.BASE_URL) {
+if (
+  !process.env.SUPABASE_URL ||
+  !process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  !process.env.BASE_IP_URL ||
+  !process.env.BASE_URL
+) {
   throw new Error(
     "Missing Supabase environment variables OR BASE_IP_URL in runner service !!"
   );
@@ -59,7 +64,24 @@ async function processJob(job: Project) {
       await runCommandWithLogs("npm", ["run", "build"], dir, job.id);
       await updateLogs(job.id, "$ Project built successfully...");
 
-      const buildPath = path.join(dir, "dist");
+      const possibleDirs = ["dist", "build", "out"];
+      let buildPath = "";
+
+      for (const dirName of possibleDirs) {
+        const fullPath = path.join(dir, dirName);
+        if (await fs.pathExists(fullPath)) {
+          buildPath = fullPath;
+          break;
+        }
+      }
+
+      if (!buildPath) {
+        throw new Error("No valid frontend build folder found.");
+      }
+      
+      if (!(await fs.pathExists(buildPath))) {
+        throw new Error(`Build path ${buildPath} does not exist !!`);
+      }
 
       const response = await fetch(`${process.env.BASE_IP_URL!}/upload`, {
         method: "POST",
@@ -72,7 +94,7 @@ async function processJob(job: Project) {
       writeNginxRoute(job.id, false);
       reloadNginx();
 
-      await fs.remove(dir); 
+      await fs.remove(dir);
       await updateLogs(job.id, `$ Cleaned up local build...`);
 
       await supabase
@@ -158,7 +180,7 @@ async function processJob(job: Project) {
       writeNginxRoute(job.id, true, port);
       reloadNginx();
 
-      await fs.remove(dir); 
+      await fs.remove(dir);
       await updateLogs(job.id, `$ Cleaned up local build...`);
 
       await supabase
@@ -176,7 +198,7 @@ async function processJob(job: Project) {
     console.error("❌ Build failed:", err);
     await updateLogs(job.id, `# Build failed: ${err.message || err}`);
 
-    await fs.remove(dir); 
+    await fs.remove(dir);
     await updateLogs(job.id, `$ Cleaned up local build...`);
 
     await supabase
