@@ -78,10 +78,8 @@ async function processJob(job: Project) {
       if (!buildPath) {
         throw new Error("No valid frontend build folder found.");
       }
-      
-      if (!(await fs.pathExists(buildPath))) {
-        throw new Error(`Build path ${buildPath} does not exist !!`);
-      }
+
+      await updateLogs(job.id, `$ Found build folder: ${buildPath}`);
 
       const response = await fetch(`${process.env.BASE_IP_URL!}/upload`, {
         method: "POST",
@@ -99,10 +97,7 @@ async function processJob(job: Project) {
 
       await supabase
         .from("projects")
-        .update({
-          status: "deployed",
-          deployed_url: deployedUrl,
-        })
+        .update({ status: "deployed", deployed_url: deployedUrl })
         .eq("id", job.id);
 
       await updateLogs(job.id, `$ 🎉🎉 React app deployed at: ${deployedUrl}`);
@@ -132,6 +127,7 @@ async function processJob(job: Project) {
           break;
         }
       }
+
       if (!entryFile) entryFile = isTSProject ? "src/index.ts" : "index.js";
 
       if (!fs.existsSync(dockerfilePath)) {
@@ -185,11 +181,7 @@ async function processJob(job: Project) {
 
       await supabase
         .from("projects")
-        .update({
-          status: "deployed",
-          deployed_url: deployedUrl,
-          port,
-        })
+        .update({ status: "deployed", deployed_url: deployedUrl, port })
         .eq("id", job.id);
 
       await updateLogs(job.id, `🎉🎉 Node app deployed at: ${deployedUrl}`);
@@ -197,10 +189,8 @@ async function processJob(job: Project) {
   } catch (err: any) {
     console.error("❌ Build failed:", err);
     await updateLogs(job.id, `# Build failed: ${err.message || err}`);
-
     await fs.remove(dir);
     await updateLogs(job.id, `$ Cleaned up local build...`);
-
     await supabase
       .from("projects")
       .update({ status: "error" })

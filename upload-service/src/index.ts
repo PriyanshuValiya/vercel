@@ -12,7 +12,11 @@ const app = express();
 app.use(express.json());
 const PORT = 4000;
 
-if (!process.env.S3_BUCKET || !process.env.AWS_REGION || !process.env.BASE_URL) {
+if (
+  !process.env.S3_BUCKET ||
+  !process.env.AWS_REGION ||
+  !process.env.BASE_URL
+) {
   throw new Error(
     "Missing S3_BUCKET OR AWS_REGION in environment variables OR BASE_URL in upload-service !!"
   );
@@ -57,9 +61,7 @@ app.post("/upload", async (req, res) => {
 
   try {
     await uploadDirectoryToS3(localPath, process.env.S3_BUCKET!, projectId);
-
     const url = `${process.env.BASE_URL!}/${projectId}`;
-
     res.status(200).json({ url });
   } catch (err) {
     console.error("❌ Upload error:", err);
