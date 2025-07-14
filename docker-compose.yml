@@ -17,6 +17,8 @@ services:
       - "4000:4000"
     env_file:
       - upload-service/.env
+    volumes:
+      - /home/ubuntu/vercel/builds:/home/ubuntu/vercel/builds
     depends_on:
       - backend
     restart: always
