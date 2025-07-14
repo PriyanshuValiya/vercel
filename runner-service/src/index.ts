@@ -26,7 +26,7 @@ const supabase = createClient(
 async function processJob(job: Project) {
   console.log("🔧 Processing:", job.project_name);
 
-  const tmpRoot = process.platform === "win32" ? "C:\\tmp" : "/tmp";
+  const tmpRoot = process.platform === "win32" ? "C:\\tmp" : "/home/ubuntu/vercel/builds";
   const dir = path.join(tmpRoot, `${job.project_name}-${Date.now()}`);
 
   if (await fs.pathExists(dir)) await fs.remove(dir);
@@ -101,14 +101,15 @@ async function processJob(job: Project) {
 
       if (!fs.existsSync(dockerfilePath)) {
         const defaultDockerfile = `
-FROM node:18-alpine
-WORKDIR /app
-COPY . .
-RUN npm install
-${isTSProject ? "RUN npm run build" : ""}
-ENV PORT=3000
-EXPOSE 3000
-CMD ["node", "${isTSProject ? "dist" : "."}/${entryFile.replace(".ts", ".js")}"]
+           FROM node:18-alpine
+           WORKDIR /app
+           COPY . .
+           RUN npm install
+           ${isTSProject ? "RUN npm run build" : ""}
+           COPY .env .env
+           ENV PORT=3000
+           EXPOSE 3000
+           CMD ["node", "${isTSProject ? "dist" : "."}/${entryFile.replace(".ts", ".js")}"]
         `;
         fs.writeFileSync(dockerfilePath, defaultDockerfile.trim());
         await updateLogs(
@@ -167,7 +168,7 @@ async function startPolling() {
   setInterval(async () => {
     const jobString = await redis.rpop("build-queue");
     if (!jobString || jobString === "null") {
-      // console.log("@ No job found in Redis...");
+      console.log("@ No job found in Redis...");
       return;
     }
 

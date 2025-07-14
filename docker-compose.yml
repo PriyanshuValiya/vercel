@@ -30,6 +30,7 @@ services:
       - runner-service/.env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /home/ubuntu/vercel/builds:/home/ubuntu/vercel/builds
     depends_on:
       - upload-service
       - backend
