@@ -190,8 +190,8 @@ async function processJob(job: Project) {
   } catch (err: any) {
     console.error("❌ Build failed:", err);
     await updateLogs(job.id, `# Build failed: ${err.message || err}`);
-    await fs.remove(dir);
-    await updateLogs(job.id, `$ Cleaned up local build...`);
+    // await fs.remove(dir);
+    // await updateLogs(job.id, `$ Cleaned up local build...`);
     await supabase
       .from("projects")
       .update({ status: "error" })
