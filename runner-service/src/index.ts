@@ -88,6 +88,7 @@ async function processJob(job: Project) {
       });
 
       const { url: deployedUrl } = await response.json();
+      await updateLogs(job.id, `$ Uploaded build to S3 successfully...`);
 
       writeNginxRoute(job.id, false);
       reloadNginx();
