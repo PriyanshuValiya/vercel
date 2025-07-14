@@ -93,8 +93,8 @@ async function processJob(job: Project) {
       writeNginxRoute(job.id, false);
       reloadNginx();
 
-      // await fs.remove(dir);
-      // await updateLogs(job.id, `$ Cleaned up local build...`);
+      await fs.remove(dir);
+      await updateLogs(job.id, `$ Cleaned up local build...`);
 
       await supabase
         .from("projects")
@@ -188,10 +188,10 @@ async function processJob(job: Project) {
       await updateLogs(job.id, `🎉🎉 Node app deployed at: ${deployedUrl}`);
     }
   } catch (err: any) {
-    console.error("❌ Build failed:", err);
+    console.error("# Build failed:", err);
     await updateLogs(job.id, `# Build failed: ${err.message || err}`);
-    // await fs.remove(dir);
-    // await updateLogs(job.id, `$ Cleaned up local build...`);
+    await fs.remove(dir);
+    await updateLogs(job.id, `$ Cleaned up local build...`);
     await supabase
       .from("projects")
       .update({ status: "error" })
@@ -211,12 +211,12 @@ async function startPolling() {
     try {
       const job: Project = JSON.parse(jobString);
       if (!job?.project_name || !job?.repo_url) {
-        console.log("❌ Invalid job payload:", job);
+        console.log("# Invalid job payload:", job);
         return;
       }
       await processJob(job);
     } catch (err) {
-      console.error("❌ Failed to parse job JSON:", jobString);
+      console.error("# Failed to parse job JSON:", jobString);
     }
   }, 5000);
 }

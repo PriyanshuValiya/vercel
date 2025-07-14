@@ -34,7 +34,6 @@ export async function loadPorts(): Promise<void> {
   });
 
   portsLoaded = true;
-  console.log(`Loaded ${usedPorts.size} used ports from DB.`);
 }
 
 export async function getAvailablePort(): Promise<number> {

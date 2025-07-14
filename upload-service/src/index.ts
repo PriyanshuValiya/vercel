@@ -64,7 +64,7 @@ app.post("/upload", async (req, res) => {
     const url = `${process.env.BASE_URL!}/${projectId}`;
     res.status(200).json({ url });
   } catch (err) {
-    console.error("❌ Upload error:", err);
+    console.error("# Upload error:", err);
     res.status(500).json({ error: "Upload failed" });
   }
 });
@@ -74,5 +74,5 @@ app.get("/", (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Upload service listening on port ${PORT}`);
+  console.log(`Upload service listening on port ${PORT}`);
 });
