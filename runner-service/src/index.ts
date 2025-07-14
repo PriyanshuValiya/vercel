@@ -12,9 +12,9 @@ import fs from "fs-extra";
 import { runCommandWithLogs } from "./utils/command";
 import { updateLogs } from "./utils/logger";
 
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.BASE_IP_URL || !process.env.BASE_URL) {
   throw new Error(
-    "Missing Supabase environment variables in runner service !!"
+    "Missing Supabase environment variables OR BASE_IP_URL in runner service !!"
   );
 }
 
@@ -26,7 +26,8 @@ const supabase = createClient(
 async function processJob(job: Project) {
   console.log("🔧 Processing:", job.project_name);
 
-  const tmpRoot = process.platform === "win32" ? "C:\\tmp" : "/home/ubuntu/vercel/builds";
+  const tmpRoot =
+    process.platform === "win32" ? "C:\\tmp" : "/home/ubuntu/vercel/builds";
   const dir = path.join(tmpRoot, `${job.project_name}-${Date.now()}`);
 
   if (await fs.pathExists(dir)) await fs.remove(dir);
@@ -38,20 +39,29 @@ async function processJob(job: Project) {
     .eq("id", job.id);
 
   try {
-    await updateLogs(job.id, `📦 Cloning ${job.repo_url}`);
+    await updateLogs(job.id, `$ Cloning repo ${job.repo_url}...`);
     await simpleGit().clone(job.repo_url, dir);
-    await updateLogs(job.id, "✅ Repo cloned");
+    await updateLogs(job.id, "$ Repo cloned successfully..");
+
+    if (job.env_variables && typeof job.env_variables === "object") {
+      const envContent = Object.entries(job.env_variables)
+        .map(([key, value]) => `${key}=${value}`)
+        .join("\n");
+      await fs.writeFile(path.join(dir, ".env"), envContent);
+      await updateLogs(job.id, "$ .env file created, variable injected...");
+    }
 
     if (job.framework === "React") {
-      await updateLogs(job.id, "📦 Installing dependencies...");
+      await updateLogs(job.id, "$ Installing dependencies...");
       await runCommandWithLogs("npm", ["install"], dir, job.id);
 
-      await updateLogs(job.id, "🔧 Building project...");
+      await updateLogs(job.id, "$ Building project...");
       await runCommandWithLogs("npm", ["run", "build"], dir, job.id);
+      await updateLogs(job.id, "$ Project built successfully...");
 
       const buildPath = path.join(dir, "dist");
 
-      const response = await fetch("http://localhost:4000/upload", {
+      const response = await fetch(`${process.env.BASE_IP_URL!}/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ projectId: job.id, localPath: buildPath }),
@@ -62,6 +72,9 @@ async function processJob(job: Project) {
       writeNginxRoute(job.id, false);
       reloadNginx();
 
+      await fs.remove(dir); 
+      await updateLogs(job.id, `$ Cleaned up local build...`);
+
       await supabase
         .from("projects")
         .update({
@@ -70,9 +83,9 @@ async function processJob(job: Project) {
         })
         .eq("id", job.id);
 
-      await updateLogs(job.id, `🚀 React app deployed at: ${deployedUrl}`);
+      await updateLogs(job.id, `$ 🎉🎉 React app deployed at: ${deployedUrl}`);
     } else {
-      const port = getAvailablePort();
+      const port = await getAvailablePort();
       const dockerfilePath = path.join(dir, "Dockerfile");
       const isTSProject = fs.existsSync(path.join(dir, "tsconfig.json"));
 
@@ -101,28 +114,31 @@ async function processJob(job: Project) {
 
       if (!fs.existsSync(dockerfilePath)) {
         const defaultDockerfile = `
-           FROM node:18-alpine
-           WORKDIR /app
-           COPY . .
-           RUN npm install
-           ${isTSProject ? "RUN npm run build" : ""}
-           COPY .env .env
-           ENV PORT=3000
-           EXPOSE 3000
-           CMD ["node", "${isTSProject ? "dist" : "."}/${entryFile.replace(".ts", ".js")}"]
+          FROM node:18-alpine
+          WORKDIR /app
+          COPY . .
+          RUN npm install
+          ${isTSProject ? "RUN npm run build" : ""}
+          COPY .env .env
+          ENV PORT=3000
+          EXPOSE 3000
+          CMD ["node", "${isTSProject ? "dist" : "."}/${entryFile.replace(
+          ".ts",
+          ".js"
+        )}"]
         `;
         fs.writeFileSync(dockerfilePath, defaultDockerfile.trim());
         await updateLogs(
           job.id,
-          "⚠️ No Dockerfile found — default one generated"
+          "! No Dockerfile found, creating Dockerfile..."
         );
       }
 
-      await updateLogs(job.id, "📦 Installing deps...");
+      await updateLogs(job.id, "$ Installing dependencies...");
       await runCommandWithLogs("npm", ["install"], dir, job.id);
 
       const imageName = `${job.project_name}-${job.id}`.toLowerCase();
-      await updateLogs(job.id, `🐳 Building Docker image: ${imageName}`);
+      await updateLogs(job.id, `$ Building Docker image...`);
       await runCommandWithLogs(
         "docker",
         ["build", "-t", imageName, "."],
@@ -130,7 +146,7 @@ async function processJob(job: Project) {
         job.id
       );
 
-      await updateLogs(job.id, `🚀 Running Docker container on port ${port}`);
+      await updateLogs(job.id, `$ Running Docker container...`);
       await runCommandWithLogs(
         "docker",
         ["run", "-d", "-p", `${port}:3000`, "--name", imageName, imageName],
@@ -138,9 +154,12 @@ async function processJob(job: Project) {
         job.id
       );
 
-      const deployedUrl = `https://vercel.priyanshuvaliya.me/${job.id}`;
+      const deployedUrl = `${process.env.BASE_URL!}/${job.id}`;
       writeNginxRoute(job.id, true, port);
       reloadNginx();
+
+      await fs.remove(dir); 
+      await updateLogs(job.id, `$ Cleaned up local build...`);
 
       await supabase
         .from("projects")
@@ -151,11 +170,15 @@ async function processJob(job: Project) {
         })
         .eq("id", job.id);
 
-      await updateLogs(job.id, `✅ Node app deployed at: ${deployedUrl}`);
+      await updateLogs(job.id, `🎉🎉 Node app deployed at: ${deployedUrl}`);
     }
   } catch (err: any) {
     console.error("❌ Build failed:", err);
-    await updateLogs(job.id, `❌ Build failed: ${err.message || err}`);
+    await updateLogs(job.id, `# Build failed: ${err.message || err}`);
+
+    await fs.remove(dir); 
+    await updateLogs(job.id, `$ Cleaned up local build...`);
+
     await supabase
       .from("projects")
       .update({ status: "error" })

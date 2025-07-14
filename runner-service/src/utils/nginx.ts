@@ -21,8 +21,6 @@ export function writeNginxRoute(
   isNode: boolean,
   port?: number
 ) {
-  console.log("Path:", nginxRoutePath);
-  
   if (!fs.existsSync(nginxRoutePath)) {
     fs.mkdirSync(nginxRoutePath, { recursive: true });
   }
@@ -30,27 +28,36 @@ export function writeNginxRoute(
   const filePath = path.join(nginxRoutePath, `${projectId}.conf`);
 
   const config = isNode
-    ? `location /${projectId}/ {
-        proxy_pass http://host.docker.internal:${port};
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-      }`
-    : `location /${projectId}/ {
-  proxy_pass https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${projectId}/index.html;
-}`;
+    ? `
+location /${projectId}/ {
+    proxy_pass http://localhost:${port}/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+    rewrite ^/${projectId}/(.*)$ /$1 break;
+}`.trim()
+    : `
+location /${projectId}/ {
+    proxy_pass https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${projectId}/;
+    rewrite ^/${projectId}/(.*)$ /$1 break;
+}`.trim();
 
-  fs.writeFileSync(filePath, config);
+  try {
+    fs.writeFileSync(filePath, config);
+    console.log(`[NGINX] Route written to ${filePath}`);
+  } catch (err) {
+    console.error(`[NGINX] Failed to write route: ${err}`);
+  }
 }
 
 export function reloadNginx() {
   exec("nginx -s reload", (err) => {
     if (err) {
-      console.error("# NGINX reload failed:", err);
+      console.error("[NGINX] Reload failed:", err);
     } else {
-      console.log("@ NGINX reloaded");
+      console.log("[NGINX] Reloaded successfully");
     }
   });
 }
