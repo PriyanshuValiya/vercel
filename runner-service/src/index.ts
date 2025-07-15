@@ -101,7 +101,7 @@ async function processJob(job: Project) {
         .update({ status: "deployed", deployed_url: deployedUrl })
         .eq("id", job.id);
 
-      await updateLogs(job.id, `$ 🎉🎉 React app deployed at: ${deployedUrl}`);
+      await updateLogs(job.id, `$🎉🎉 React app deployed at: ${deployedUrl}`);
     } else {
       const port = await getAvailablePort();
       const dockerfilePath = path.join(dir, "Dockerfile");
@@ -149,7 +149,7 @@ async function processJob(job: Project) {
         fs.writeFileSync(dockerfilePath, defaultDockerfile.trim());
         await updateLogs(
           job.id,
-          "! No Dockerfile found, creating Dockerfile..."
+          "@ No Dockerfile found, creating Dockerfile..."
         );
       }
 
@@ -185,7 +185,7 @@ async function processJob(job: Project) {
         .update({ status: "deployed", deployed_url: deployedUrl, port })
         .eq("id", job.id);
 
-      await updateLogs(job.id, `🎉🎉 Node app deployed at: ${deployedUrl}`);
+      await updateLogs(job.id, `$🎉🎉 Node app deployed at: ${deployedUrl}`);
     }
   } catch (err: any) {
     console.error("# Build failed:", err);
