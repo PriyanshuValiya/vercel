@@ -8,7 +8,7 @@ const manrope = Manrope({
   variable: "--font-manrope",
   weight: ["400", "500", "600", "700"],
 });
-
+ 
 export const metadata: Metadata = {
   title: "Vercel",
   description: "Deploy your websites with Vercel",
