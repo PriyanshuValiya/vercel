@@ -38,13 +38,13 @@ services:
       - backend
     restart: always
 
-  frontend:
-    build: ./www
-    container_name: vercel_frontend
-    ports:
-      - "3000:3000"
-    env_file:
-      - www/.env
-    restart: always
-    depends_on:
-      - backend
+  # frontend:
+  #   build: ./www
+  #   container_name: vercel_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - www/.env
+  #   restart: always
+  #   depends_on:
+  #     - backend

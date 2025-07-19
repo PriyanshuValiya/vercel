@@ -1,30 +1,3 @@
-// "use client";
-
-// import { useRouter } from "next/navigation";
-// import { useAuth } from "@/context/AuthContext";
-
-// export default function HomePage() {
-// const { user } = useAuth();
-// const router = useRouter();
-
-// const handleClick = () => {
-//   if (user) router.push("/dashboard");
-//   else router.push("/login");
-// };
-
-//   return (
-//     <div className="min-h-screen flex items-center justify-center flex-col bg-gray-50">
-//       <h1 className="text-4xl font-bold mb-6">Welcome to Vercel</h1>
-//       <button
-//         onClick={handleClick}
-//         className="bg-black text-white px-6 py-3 rounded hover:bg-gray-800"
-//       >
-//         Get Started
-//       </button>
-//     </div>
-//   );
-// }
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -36,6 +9,7 @@ import { Zap, Globe, Shield, Rocket } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import Footer from "@/components/Footer";
 
 const features = [
   {
@@ -108,9 +82,12 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center space-x-4">
-                <Button className="bg-black text-white hover:bg-gray-800" onClick={handleClick}>
-                  Start Deploying
-                </Button>
+              <Button
+                className="bg-black text-white hover:bg-gray-800"
+                onClick={handleClick}
+              >
+                Start Deploying
+              </Button>
             </div>
           </div>
         </div>
@@ -125,9 +102,9 @@ export default function LandingPage() {
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6">
               Develop,{" "}
-              <span className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6">
+              <span className="text-4xl md:text-6xl lg:text-7xl font-semibold text-gray-900 mb-6">
                 Build &
               </span>{" "}
               Ship
@@ -140,13 +117,13 @@ export default function LandingPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-                <Button
-                  size="lg"
-                  className="bg-black text-white hover:bg-gray-800 px-8 py-3"
-                  onClick={handleClick}
-                >
-                  <p className="text-base">Start Deploying</p>
-                </Button>
+              <Button
+                size="lg"
+                className="bg-black text-white hover:bg-gray-800 px-8 py-3"
+                onClick={handleClick}
+              >
+                <p className="text-base">Start Deploying</p>
+              </Button>
             </div>
           </motion.div>
 
@@ -254,157 +231,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-black text-white py-12">
-        <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-6 h-6 bg-white rounded-sm flex items-center justify-center">
-                  <span className="text-black font-bold text-xs">▲</span>
-                </div>
-                <span className="font-bold text-lg">Vercel</span>
-              </div>
-              <p className="text-gray-400">
-                The platform for frontend teams to build, deploy, and scale.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link
-                    href="/features"
-                    className="hover:text-white transition-colors"
-                  >
-                    Features
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/templates"
-                    className="hover:text-white transition-colors"
-                  >
-                    Templates
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/integrations"
-                    className="hover:text-white transition-colors"
-                  >
-                    Integrations
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/pricing"
-                    className="hover:text-white transition-colors"
-                  >
-                    Pricing
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link
-                    href="/docs"
-                    className="hover:text-white transition-colors"
-                  >
-                    Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/guides"
-                    className="hover:text-white transition-colors"
-                  >
-                    Guides
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/help"
-                    className="hover:text-white transition-colors"
-                  >
-                    Help
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/status"
-                    className="hover:text-white transition-colors"
-                  >
-                    Status
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>
-                  <Link
-                    href="/about"
-                    className="hover:text-white transition-colors"
-                  >
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/blog"
-                    className="hover:text-white transition-colors"
-                  >
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/careers"
-                    className="hover:text-white transition-colors"
-                  >
-                    Careers
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/contact"
-                    className="hover:text-white transition-colors"
-                  >
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">
-              © 2024 Vercel Inc. All rights reserved.
-            </p>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link
-                href="/privacy"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="/terms"
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                Terms
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

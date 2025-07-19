@@ -286,7 +286,7 @@ export default function DashboardPage() {
                         )} */}
                       </div>
 
-                      <div className="pt-2 border-t border-border">
+                      {/* <div className="pt-2 border-t border-border">
                         <div className="flex items-center justify-between">
                           <a
                             href={project.repo_url}
@@ -305,7 +305,7 @@ export default function DashboardPage() {
                             </span>
                           )}
                         </div>
-                      </div>
+                      </div> */}
                     </CardContent>
                   </Card>
                 </Link>

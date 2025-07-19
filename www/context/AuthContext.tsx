@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/client"; // Use the same client instance
+import { supabase } from "@/lib/supabase/client"; 
 import { type User } from "../types/types";
 
 export const AuthContext = createContext<any>(null);
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (_event: any, session: any) => {
         setUser(mapUser(session?.user));
         setLoading(false);
       }
