@@ -33,11 +33,9 @@ async function updateViteConfig(dir: string, projectId: string) {
   const tsConfig = path.join(dir, "vite.config.ts");
 
   let configPath = "";
-  let isTS = false;
 
   if (await fs.pathExists(tsConfig)) {
     configPath = tsConfig;
-    isTS = true;
   } else if (await fs.pathExists(jsConfig)) {
     configPath = jsConfig;
   }
@@ -48,21 +46,22 @@ async function updateViteConfig(dir: string, projectId: string) {
 
   let configContent = await fs.readFile(configPath, "utf-8");
 
-  // Remove existing base if exists
+  // Remove existing base field if present
   configContent = configContent.replace(/base:\s*["'`](.*?)["'`],?/g, "");
 
-  // Add base config dynamically
-  const insertLine = `base: "/${projectId}/",`;
+  const baseLine = `  base: "/${projectId}/",`;
 
-  if (/defineConfig\(\{/.test(configContent)) {
+  // Insert base line properly
+  if (configContent.includes("defineConfig({")) {
     configContent = configContent.replace(
-      /defineConfig\(\{([\s\S]*?)\}/,
-      (match, inner) => `defineConfig({\n  ${insertLine}${inner}`
+      /defineConfig\(\{\s*/,
+      (match) => `${match}${baseLine}\n`
     );
   } else {
+    // fallback: insert into first object block
     configContent = configContent.replace(
-      /\{\s*\n?/,
-      (match) => `${match}  ${insertLine}\n`
+      /\{\s*/,
+      (match) => `${match}${baseLine}\n`
     );
   }
 
@@ -101,8 +100,8 @@ async function processJob(job: Project) {
       await updateLogs(job.id, "$ Installing dependencies...");
       await runCommandWithLogs("npm", ["install"], dir, job.id);
 
-      await updateLogs(job.id, "$ Editing vite.config file...");
-      await updateViteConfig(dir, job.id); 
+      await updateLogs(job.id, "$ Updating vite.config.js...");
+      await updateViteConfig(dir, job.id);
 
       await updateLogs(job.id, "$ Building project...");
       await runCommandWithLogs("npm", ["run", "build"], dir, job.id);
@@ -134,7 +133,7 @@ async function processJob(job: Project) {
       const { url: deployedUrl } = await response.json();
       await updateLogs(job.id, `$ Uploaded build to S3 successfully...`);
 
-      writeNginxRoute(job.id, false); 
+      writeNginxRoute(job.id, false);
       reloadNginx();
 
       await fs.remove(dir);
