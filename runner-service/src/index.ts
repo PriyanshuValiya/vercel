@@ -28,6 +28,47 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+async function updateViteConfig(dir: string, projectId: string) {
+  const jsConfig = path.join(dir, "vite.config.js");
+  const tsConfig = path.join(dir, "vite.config.ts");
+
+  let configPath = "";
+  let isTS = false;
+
+  if (await fs.pathExists(tsConfig)) {
+    configPath = tsConfig;
+    isTS = true;
+  } else if (await fs.pathExists(jsConfig)) {
+    configPath = jsConfig;
+  }
+
+  if (!configPath) {
+    throw new Error("vite.config.js or vite.config.ts not found in project");
+  }
+
+  let configContent = await fs.readFile(configPath, "utf-8");
+
+  // Remove existing base if exists
+  configContent = configContent.replace(/base:\s*["'`](.*?)["'`],?/g, "");
+
+  // Add base config dynamically
+  const insertLine = `base: "/${projectId}/",`;
+
+  if (/defineConfig\(\{/.test(configContent)) {
+    configContent = configContent.replace(
+      /defineConfig\(\{([\s\S]*?)\}/,
+      (match, inner) => `defineConfig({\n  ${insertLine}${inner}`
+    );
+  } else {
+    configContent = configContent.replace(
+      /\{\s*\n?/,
+      (match) => `${match}  ${insertLine}\n`
+    );
+  }
+
+  await fs.writeFile(configPath, configContent);
+}
+
 async function processJob(job: Project) {
   console.log("🔧 Processing:", job.project_name);
 
@@ -60,6 +101,9 @@ async function processJob(job: Project) {
       await updateLogs(job.id, "$ Installing dependencies...");
       await runCommandWithLogs("npm", ["install"], dir, job.id);
 
+      await updateLogs(job.id, "$ Editing vite.config file...");
+      await updateViteConfig(dir, job.id); 
+
       await updateLogs(job.id, "$ Building project...");
       await runCommandWithLogs("npm", ["run", "build"], dir, job.id);
       await updateLogs(job.id, "$ Project built successfully...");
@@ -90,7 +134,7 @@ async function processJob(job: Project) {
       const { url: deployedUrl } = await response.json();
       await updateLogs(job.id, `$ Uploaded build to S3 successfully...`);
 
-      writeNginxRoute(job.id, false);
+      writeNginxRoute(job.id, false); 
       reloadNginx();
 
       await fs.remove(dir);
