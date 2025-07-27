@@ -14,7 +14,7 @@ app.use(express.json());
 
 app.use("/api", projectRoutes);
 
-app.get("/:id", proxyController)
+app.get("/:id", proxyController);
 
 app.get("/", (req, res) => {
   res.send("Server running successfully...");
