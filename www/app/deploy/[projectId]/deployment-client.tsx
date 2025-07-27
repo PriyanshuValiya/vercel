@@ -45,7 +45,7 @@ export default function DeploymentClient({
   const [isPolling, setIsPolling] = useState(false);
 
   const isDeploying =
-    project.status === "queued" || project.status === "building";
+    project.status === "building" || project.status === "queued";
 
   useEffect(() => {
     if (isDeploying) {
@@ -66,7 +66,7 @@ export default function DeploymentClient({
             clearInterval(interval);
           }
         }
-      }, 5000);
+      }, 3000);
 
       return () => {
         clearInterval(interval);
@@ -74,6 +74,11 @@ export default function DeploymentClient({
       };
     }
   }, [project.id, isDeploying]);
+
+  // useEffect(() => {
+  //   console.log(project.status);
+  //   setProject({ ...project, status: project.status });
+  // }, [project]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -128,7 +133,7 @@ export default function DeploymentClient({
 
         return {
           id: index,
-          text: line.substring(1), 
+          text: line.substring(1),
           color,
           icon,
           hasPrefix:
@@ -193,15 +198,6 @@ export default function DeploymentClient({
                 </label>
                 <p className="mt-1 capitalize text-base">{project.framework}</p>
               </div>
-
-              {project.port && (
-                <div>
-                  <label className="text-base font-medium text-muted-foreground">
-                    Port
-                  </label>
-                  <p className="mt-1 font-mono text-base">{project.port}</p>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
