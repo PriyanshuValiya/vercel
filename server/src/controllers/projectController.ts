@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import redis from "../utils/redis";
 import supabase from "../utils/supabase";
-import fetch from "node-fetch";
+import axios from 'axios';
 
 export const getRepos = async (req: Request, res: Response) => {
   const { githubToken } = req.headers;
@@ -178,20 +178,14 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
       return res.status(500).json({ error: errorUserData });
     }
 
-    const response = await fetch("https://vercel.priyanshuvaliya.me/api/project", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        repo_url: projectData.repo_url,
-        framework: projectData.framework,
-        env_variables: projectData.env_variables,
-        user_id: projectData.user_id,
-      }),
+    const response = await axios.post("https://vercel.priyanshuvaliya.me/api/project", {
+      repo_url: projectData.repo_url,
+      framework: projectData.framework,
+      env_variables: projectData.env_variables,
+      user_id: projectData.user_id
     });
 
-    const result = await response.json();
+    const result = response.data;
 
     return res.status(200).json({
       success: true,
