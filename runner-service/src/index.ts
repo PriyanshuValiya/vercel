@@ -181,7 +181,7 @@ async function processJob(job: Project) {
       writeNginxRoute(job.id, false);
       reloadNginx();
 
-      // await fs.remove(dir);
+      await fs.remove(dir);
       await updateLogs(job.id, `$ Cleaned up local build...`);
 
       await supabase
