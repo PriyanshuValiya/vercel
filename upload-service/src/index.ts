@@ -6,7 +6,11 @@ import path from "path";
 import fs from "fs";
 import mime from "mime-types";
 import { s3 } from "./utils/s3";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import {
+  PutObjectCommand,
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
+} from "@aws-sdk/client-s3";
 
 const app = express();
 app.use(express.json());
@@ -20,6 +24,32 @@ if (
   throw new Error(
     "Missing S3_BUCKET OR AWS_REGION in environment variables OR BASE_URL in upload-service !!"
   );
+}
+
+async function deleteFolderFromS3(prefix: string): Promise<void> {
+  try {
+    const listResponse = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: process.env.S3_BUCKET!,
+        Prefix: prefix,
+      })
+    );
+
+    if (!listResponse.Contents || listResponse.Contents.length === 0) return;
+
+    const deleteParams = {
+      Bucket: process.env.S3_BUCKET!,
+      Delete: {
+        Objects: listResponse.Contents.map((item) => ({ Key: item.Key! })),
+        Quiet: true,
+      },
+    };
+
+    await s3.send(new DeleteObjectsCommand(deleteParams));
+    console.log(`@ Deleted previous folder: ${prefix}`);
+  } catch (error) {
+    console.error("# Error deleting folder from S3:", error);
+  }
 }
 
 async function uploadDirectoryToS3(
@@ -47,7 +77,7 @@ async function uploadDirectoryToS3(
       });
 
       await s3.send(command);
-      console.log(`$ Uploaded: ${s3Key}`);
+      console.log(`✔ Uploaded: ${s3Key}`);
     }
   }
 }
@@ -60,7 +90,10 @@ app.post("/upload", async (req, res) => {
   }
 
   try {
+    await deleteFolderFromS3(projectId);
+
     await uploadDirectoryToS3(localPath, process.env.S3_BUCKET!, projectId);
+
     const url = `${process.env.BASE_URL!}/${projectId}`;
     res.status(200).json({ url });
   } catch (err) {

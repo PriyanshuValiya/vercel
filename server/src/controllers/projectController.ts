@@ -24,12 +24,53 @@ export const getRepos = async (req: Request, res: Response) => {
 
 export const createProject = async (req: Request, res: Response) => {
   const { repo_url, framework, env_variables, user_id } = req.body;
+  const project_name = repo_url.split("/").pop()?.replace(".git", "");
+
+  const { data: existingProjects, error: fetchError } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("repo_url", repo_url)
+    .eq("user_id", user_id);
+
+  if (fetchError) {
+    return res.status(500).json({ error: fetchError.message });
+  }
+
+  const existingProject = existingProjects?.[0]; 
+
+  if (existingProject) {
+    const { error: updateError } = await supabase
+      .from("projects")
+      .update({
+        env_variables,
+        framework,
+        status: "queued",
+        logs: "",
+        port: null,
+        deployed_url: "", 
+      })
+      .eq("id", existingProject.id);
+
+    if (updateError) {
+      return res.status(500).json({ error: updateError.message });
+    }
+
+    await redis.lpush(
+      "build-queue",
+      JSON.stringify({ ...existingProject, env_variables, framework })
+    );
+
+    return res.json({
+      message: "Project re-queued for redeploy",
+      id: existingProject.id,
+    });
+  }
 
   const { data, error } = await supabase
     .from("projects")
     .insert({
       repo_url,
-      project_name: repo_url.split("/").pop()?.replace(".git", "") || "demo",
+      project_name,
       framework,
       env_variables,
       user_id,
@@ -42,9 +83,14 @@ export const createProject = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 
-  await redis.lpush("build-queue", JSON.stringify(data[0]));
+  const newProject = data?.[0];
 
-  res.json({ message: "Project queued", id: data[0].id });
+  if (!newProject) {
+    return res.status(500).json({ error: "Failed to create new project" });
+  }
+
+  await redis.lpush("build-queue", JSON.stringify(newProject));
+  res.json({ message: "New project queued", id: newProject.id });
 };
 
 export const deleteProject = async (req: Request, res: Response) => {
@@ -57,7 +103,6 @@ export const deleteProject = async (req: Request, res: Response) => {
   }
 
   await redis.lrem("build-queue", 0, id);
-
   res.json({ message: "Project deleted" });
 };
 

@@ -25,15 +25,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const getSession = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        setUser(mapUser(data?.session?.user));
-      } catch (error) {
-        console.error("Error getting session:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    const user = sessionData?.session?.user;
+    if (!user) throw new Error("No user in session");
+
+    const email = user.email;
+    const name = user.user_metadata?.user_name;
+    const profile_photo = user.user_metadata?.avatar_url;
+    const github_token = sessionData?.session?.provider_token;
+
+    const { data: existingUser, error: fetchError } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .single();
+
+    if(fetchError) {
+      throw fetchError;
+    }
+
+    if (existingUser) {
+      // User exists: update GitHub token
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ github_token })
+        .eq("email", email);
+
+      if (updateError) throw updateError;
+    } else {
+      const { error: insertError } = await supabase.from("users").insert({
+        name,
+        email,
+        profile_photo,
+        github_token,
+      });
+
+      if (insertError) throw insertError;
+    }
+
+    setUser(mapUser(user));
+  } catch (error) {
+    console.error("Error getting session:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     getSession();
 

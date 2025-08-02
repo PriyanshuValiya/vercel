@@ -46,19 +46,16 @@ async function updateViteConfig(dir: string, projectId: string) {
 
   let configContent = await fs.readFile(configPath, "utf-8");
 
-  // Remove existing base field if present
   configContent = configContent.replace(/base:\s*["'`](.*?)["'`],?/g, "");
 
   const baseLine = `  base: "/${projectId}/",`;
 
-  // Insert base line properly
   if (configContent.includes("defineConfig({")) {
     configContent = configContent.replace(
       /defineConfig\(\{\s*/,
       (match) => `${match}${baseLine}\n`
     );
   } else {
-    // fallback: insert into first object block
     configContent = configContent.replace(
       /\{\s*/,
       (match) => `${match}${baseLine}\n`
@@ -66,6 +63,19 @@ async function updateViteConfig(dir: string, projectId: string) {
   }
 
   await fs.writeFile(configPath, configContent);
+}
+
+async function stopAndRemoveContainer(
+  containerName: string,
+  jobId: string
+) {
+  try {
+    await runCommandWithLogs("docker", ["inspect", containerName], ".", jobId);
+    await runCommandWithLogs("docker", ["stop", containerName], ".", jobId);
+    await runCommandWithLogs("docker", ["rm", containerName], ".", jobId);
+  } catch {
+    await updateLogs(jobId, `@ No existing container ${containerName} to stop`);
+  }
 }
 
 async function processJob(job: Project) {
@@ -80,7 +90,7 @@ async function processJob(job: Project) {
 
   await supabase
     .from("projects")
-    .update({ status: "building", build_logs: "" })
+    .update({ status: "building", logs: "" })
     .eq("id", job.id);
 
   try {
@@ -99,17 +109,14 @@ async function processJob(job: Project) {
     if (job.framework === "React") {
       await updateLogs(job.id, "$ Installing dependencies...");
       await runCommandWithLogs("npm", ["install"], dir, job.id);
-
       await updateLogs(job.id, "$ Updating vite.config.js...");
       await updateViteConfig(dir, job.id);
-
       await updateLogs(job.id, "$ Building project...");
       await runCommandWithLogs("npm", ["run", "build"], dir, job.id);
       await updateLogs(job.id, "$ Project built successfully...");
 
       const possibleDirs = ["dist", "build", "out"];
       let buildPath = "";
-
       for (const dirName of possibleDirs) {
         const fullPath = path.join(dir, dirName);
         if (await fs.pathExists(fullPath)) {
@@ -200,6 +207,9 @@ async function processJob(job: Project) {
       await runCommandWithLogs("npm", ["install"], dir, job.id);
 
       const imageName = `${job.project_name}-${job.id}`.toLowerCase();
+
+      await stopAndRemoveContainer(imageName, job.id);
+
       await updateLogs(job.id, `$ Building Docker image...`);
       await runCommandWithLogs(
         "docker",
@@ -261,7 +271,7 @@ async function startPolling() {
     } catch (err) {
       console.error("# Failed to parse job JSON:", jobString);
     }
-  }, 5000);
+  }, 8000);
 }
 
 startPolling();

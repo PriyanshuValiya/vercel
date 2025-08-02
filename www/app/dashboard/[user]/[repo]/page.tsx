@@ -238,7 +238,7 @@ function DeployPage() {
         console.log(result);
         router.push(`/deploy/${result.id}`);
       } else {
-        throw new Error("Deployment failed");
+        throw new Error(`Deployment failed: ${deployResponse.statusText}`);
       }
     } catch (error) {
       console.error("Deployment error:", error);
