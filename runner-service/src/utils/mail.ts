@@ -37,7 +37,7 @@ export const sendDeploymentMail = async ({
     console.log(userData.email, projectName, deployedUrl, framework, deploymentTime);
 
     const { data, error } = await resend.emails.send({
-      from: "vercel@priyanshuvaliya.me",
+      from: "vercel@notifications.priyanshuvaliya.me",
       to: userData.email,
       subject: `${projectName} Deployed Successfully `,
       html: `
