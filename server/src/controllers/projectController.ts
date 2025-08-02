@@ -171,8 +171,9 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
     const { data: projectData, error: errorProjectData } = await supabase
       .from("projects")
       .select("*")
-      .eq("user_id", userData.id);
-      //.eq("repo_url", repoUrl);
+      .eq("user_id", userData.id)
+      .eq("repo_url", repoUrl)
+      .single();
 
     if (errorProjectData) {
       return res.status(500).json({ error: errorUserData });
