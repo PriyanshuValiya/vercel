@@ -34,9 +34,9 @@ export const createProject = async (req: Request, res: Response) => {
       .eq("user_id", user_id);
 
     if (fetchError) {
-      return res.status(500).json({ 
-        success: false, 
-        error: fetchError.message 
+      return res.status(500).json({
+        success: false,
+        error: fetchError.message,
       });
     }
 
@@ -50,29 +50,26 @@ export const createProject = async (req: Request, res: Response) => {
           framework,
           status: "queued",
           logs: "",
-          deployed_url: "", 
-          total_deployments: existingProject.total_deployments + 1
+          deployed_url: "",
+          total_deployments: existingProject.total_deployments + 1,
         })
         .eq("id", existingProject.id)
         .select()
         .single();
 
       if (updateError) {
-        return res.status(500).json({ 
-          success: false, 
-          error: updateError.message 
+        return res.status(500).json({
+          success: false,
+          error: updateError.message,
         });
       }
 
-      await redis.lpush(
-        "build-queue",
-        JSON.stringify(updatedProject) 
-      );
+      await redis.lpush("build-queue", JSON.stringify(updatedProject));
 
       return res.json({
         success: true,
         message: "Project re-queued for redeploy",
-        project: updatedProject
+        project: updatedProject,
       });
     }
 
@@ -87,33 +84,32 @@ export const createProject = async (req: Request, res: Response) => {
         user_id,
         status: "queued",
         deployed_url: "",
-        total_deployments: 1
+        total_deployments: 1,
       })
       .select()
       .single();
 
     if (error) {
-      return res.status(500).json({ 
-        success: false, 
-        error: error.message 
+      return res.status(500).json({
+        success: false,
+        error: error.message,
       });
     } else {
       console.log("New :", newProject);
     }
 
     await redis.lpush("build-queue", JSON.stringify(newProject));
-    
-    return res.json({ 
-      success: true,
-      message: "New project queued", 
-      project: newProject 
-    });
 
+    return res.json({
+      success: true,
+      message: "New project queued",
+      project: newProject,
+    });
   } catch (error) {
     console.error("CreateProject error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      error: "Internal server error" 
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
     });
   }
 };
@@ -155,6 +151,38 @@ export const getProjects = async (req: Request, res: Response) => {
   }
 };
 
-export const triggerCreateProject = (req:Request, res:Response) => {
+export const triggerCreateProject = async (req: Request, res: Response) => {
   console.log(req.body);
-}
+
+  try {
+    const userName = req.body?.repository.owner.name;
+    const repoUrl = req.body?.repository.clone_url;
+
+    const { data: userData, error: errorUserData } = await supabase
+      .from("users")
+      .select("*")
+      .eq("name", userName)
+      .single();
+
+    if (errorUserData) {
+      return res.status(500).json({ error: errorUserData });
+    }
+
+    const { data: projectData, error: errorProjectData } = await supabase
+      .from("projects")
+      .select("user_id, repo_url, framework, env_variables")
+      .eq("user_id", userData.id)
+      .eq("repo_url", repoUrl)
+      .single();
+
+    if (errorProjectData) {
+      return res.status(500).json({ error: errorUserData });
+    }
+
+    console.log(projectData);
+
+    return res.status(200).json({ success: true, message: "Webhook Triggered Successfully..."});
+  } catch (err) {
+    console.error("Error in Trigger Webhook :", err);
+  }
+};
