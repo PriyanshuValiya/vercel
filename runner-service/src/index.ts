@@ -12,6 +12,7 @@ import fs from "fs-extra";
 import { runCommandWithLogs } from "./utils/command";
 import { updateLogs } from "./utils/logger";
 import { exec } from "child_process";
+import { sendDeploymentMail } from "./utils/mail";
 
 if (
   !process.env.SUPABASE_URL ||
@@ -65,16 +66,6 @@ async function updateViteConfig(dir: string, projectId: string) {
 
   await fs.writeFile(configPath, configContent);
 }
-
-// async function stopAndRemoveContainer(containerName: string, jobId: string) {
-//   try {
-//     await runCommandWithLogs("docker", ["inspect", containerName], ".", jobId);
-//     await runCommandWithLogs("docker", ["stop", containerName], ".", jobId);
-//     await runCommandWithLogs("docker", ["rm", containerName], ".", jobId);
-//   } catch {
-//     await updateLogs(jobId, `@ No existing container ${containerName} to stop`);
-//   }
-// }
 
 export const stopAndRemoveContainer = async (
   imageName: string,
@@ -198,14 +189,18 @@ async function processJob(job: Project) {
         .eq("id", job.id);
 
       await updateLogs(job.id, `$🎉🎉 React app deployed at: ${deployedUrl}`);
+
+      await sendDeploymentMail({
+        userId: job.user_id,
+        projectName: job.repo_url.split("/").pop()?.replace(".git", "") || "",
+        deployedUrl,
+        framework: job.framework,
+        deploymentTime: new Date().toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+        }),
+      });
     } else {
       const port = job.port == null ? await getAvailablePort() : job.port;
-
-      // if(job.port != null) {
-      //   port = job.port;
-      // } else {
-      //   port = await getAvailablePort();
-      // }
 
       const dockerfilePath = path.join(dir, "Dockerfile");
       const isTSProject = fs.existsSync(path.join(dir, "tsconfig.json"));
@@ -245,9 +240,9 @@ async function processJob(job: Project) {
           ENV PORT=3000
           EXPOSE 3000
           CMD ["node", "${isTSProject ? "dist" : "."}/${entryFile.replace(
-          ".ts",
-          ".js"
-        )}"]
+            ".ts",
+            ".js"
+          )}"]
         `;
         fs.writeFileSync(dockerfilePath, defaultDockerfile.trim());
         await updateLogs(
@@ -292,6 +287,16 @@ async function processJob(job: Project) {
         .eq("id", job.id);
 
       await updateLogs(job.id, `$🎉🎉 Node app deployed at: ${deployedUrl}`);
+
+      await sendDeploymentMail({
+        userId: job.user_id,
+        projectName: job.repo_url.split("/").pop()?.replace(".git", "") || "",
+        deployedUrl,
+        framework: job.framework,
+        deploymentTime: new Date().toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+        }),
+      });
     }
   } catch (err: any) {
     console.error("# Build failed:", err);
