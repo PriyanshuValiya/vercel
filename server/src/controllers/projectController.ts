@@ -152,7 +152,7 @@ export const getProjects = async (req: Request, res: Response) => {
 };
 
 export const triggerCreateProject = async (req: Request, res: Response) => {
-  console.log(req.body);
+  //console.log(req.body);
 
   try {
     const userName = req.body?.repository.owner.name;
