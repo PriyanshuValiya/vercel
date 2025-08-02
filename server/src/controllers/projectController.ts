@@ -158,6 +158,8 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
     const userName = req.body?.repository.owner.name;
     const repoUrl = req.body?.repository.clone_url;
 
+    console.log("Info :", userName, repoUrl);
+
     const { data: userData, error: errorUserData } = await supabase
       .from("users")
       .select("*")
@@ -181,8 +183,11 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
 
     console.log(projectData);
 
-    return res.status(200).json({ success: true, message: "Webhook Triggered Successfully..."});
+    return res
+      .status(200)
+      .json({ success: true, message: "Webhook Triggered Successfully..." });
   } catch (err) {
     console.error("Error in Trigger Webhook :", err);
+    return res.status(400).json({ error: err });
   }
 };
