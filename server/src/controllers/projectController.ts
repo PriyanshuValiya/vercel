@@ -158,8 +158,6 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
     const userName = req.body?.repository.owner.name;
     const repoUrl = req.body?.repository.clone_url;
 
-    console.log("Info :", userName, repoUrl);
-
     const { data: userData, error: errorUserData } = await supabase
       .from("users")
       .select("*")
@@ -168,16 +166,13 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
 
     if (errorUserData) {
       return res.status(500).json({ error: errorUserData });
-    } else {
-      console.log("User:", userData);
-    }
+    } 
 
     const { data: projectData, error: errorProjectData } = await supabase
       .from("projects")
-      .select("user_id, repo_url, framework, env_variables")
+      .select("*")
       .eq("user_id", userData.id)
-      .eq("repo_url", repoUrl)
-      .single();
+      .eq("repo_url", repoUrl);
 
     if (errorProjectData) {
       return res.status(500).json({ error: errorUserData });
