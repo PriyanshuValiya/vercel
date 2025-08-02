@@ -236,7 +236,7 @@ function DeployPage() {
       if (deployResponse.ok) {
         const result = await deployResponse.json();
         console.log(result);
-        router.push(`/deploy/${result?.id}`);
+        router.push(`/deploy/${result?.project.id}`);
       } else {
         throw new Error(`Deployment failed: ${deployResponse.statusText}`);
       }

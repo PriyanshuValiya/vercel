@@ -136,57 +136,52 @@ export default function DeploymentClient({
 
   const logEntries = formatLogs(project.logs);
 
-const handleRedeploy = async (event: React.MouseEvent<HTMLButtonElement>) => {
-  event.preventDefault();
-  setIsRedeploying(true);
+  const handleRedeploy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    setIsRedeploying(true);
 
-  // Optimistic update
-  setProject((prev) => ({
-    ...prev,
-    logs: "",
-    status: "queued",
-  }));
+    setProject((prev) => ({
+      ...prev,
+      logs: "",
+      status: "queued",
+    }));
 
-  try {
-    const deployResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          repo_url: project.repo_url,
-          framework: project.framework,
-          env_variables: project.env_variables,
-          user_id: project.user_id,
-        }),
-      }
-    );
-
-    const deployData = await deployResponse.json();
-
-    if (!deployResponse.ok) {
-      throw new Error(
-        `HTTP ${deployResponse.status}: ${deployData.error || 'Unknown error'}`
+    try {
+      const deployResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            repo_url: project.repo_url,
+            framework: project.framework,
+            env_variables: project.env_variables,
+            user_id: project.user_id,
+          }),
+        }
       );
-    }
 
-    if (deployData.success && deployData.project) {
-      setProject(deployData.project);
-      // Start polling immediately for the new deployment
-      setIsPolling(true);
-    } else {
-      throw new Error(deployData.error || "Invalid response format");
+      const deployData = await deployResponse.json();
+
+      if (!deployResponse.ok) {
+        throw new Error("Error While Redeploying !!");
+      }
+
+      if (deployData.success && deployData.project) {
+        setProject(deployData.project);
+        setIsPolling(true);
+      } else {
+        throw new Error(deployData.error || "Invalid response format");
+      }
+    } catch (error) {
+      console.error("Redeployment error:", error);
+      setProject(initialProject);
+    } finally {
+      setIsRedeploying(false);
     }
-    
-  } catch (error) {
-    console.error("Redeployment error:", error);
-    setProject(initialProject);
-  } finally {
-    setIsRedeploying(false);
-  }
-};
+  };
 
   return (
     <div className="container mx-auto p-6 max-w-8xl px-12">

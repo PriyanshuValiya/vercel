@@ -43,7 +43,6 @@ export const createProject = async (req: Request, res: Response) => {
     const existingProject = existingProjects?.[0];
 
     if (existingProject) {
-      // Update existing project
       const { data: updatedProject, error: updateError } = await supabase
         .from("projects")
         .update({
@@ -100,6 +99,8 @@ export const createProject = async (req: Request, res: Response) => {
         success: false, 
         error: error.message 
       });
+    } else {
+      console.log("New :", newProject);
     }
 
     await redis.lpush("build-queue", JSON.stringify(newProject));
