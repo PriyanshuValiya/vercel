@@ -271,7 +271,7 @@ async function processJob(job: Project) {
         job.id
       );
 
-      await updateLogs(job.id, `$ Running Docker container on ${port}...`);
+      await updateLogs(job.id, `$ Running Docker container...`);
       await runCommandWithLogs(
         "docker",
         ["run", "-d", "-p", `${port}:3000`, "--name", imageName, imageName],
@@ -284,7 +284,7 @@ async function processJob(job: Project) {
       reloadNginx();
 
       await fs.remove(dir);
-      await updateLogs(job.id, `$ Cleaned up local build...`);
+      await updateLogs(job.id, `$ Cleaned up local build storage...`);
 
       await supabase
         .from("projects")

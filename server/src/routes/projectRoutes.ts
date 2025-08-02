@@ -4,6 +4,7 @@ import {
   createProject,
   deleteProject,
   getProjects,
+  triggerCreateProject
 } from "../controllers/projectController";
 
 const router = express.Router();
@@ -13,5 +14,6 @@ router.post("/project", createProject);
 router.delete("/project/:id", deleteProject);
 
 router.get("/project", getProjects);
+router.post("/webhook", triggerCreateProject);
 
 export default router;

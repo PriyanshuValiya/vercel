@@ -50,7 +50,6 @@ export const createProject = async (req: Request, res: Response) => {
           framework,
           status: "queued",
           logs: "",
-          // port,
           deployed_url: "", 
           total_deployments: existingProject.total_deployments + 1
         })
@@ -155,3 +154,7 @@ export const getProjects = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, error: err });
   }
 };
+
+export const triggerCreateProject = (req:Request, res:Response) => {
+  console.log(req.body);
+}
