@@ -65,13 +65,22 @@ async function updateViteConfig(dir: string, projectId: string) {
   await fs.writeFile(configPath, configContent);
 }
 
+// async function stopAndRemoveContainer(containerName: string, jobId: string) {
+//   try {
+//     await runCommandWithLogs("docker", ["inspect", containerName], ".", jobId);
+//     await runCommandWithLogs("docker", ["stop", containerName], ".", jobId);
+//     await runCommandWithLogs("docker", ["rm", containerName], ".", jobId);
+//   } catch {
+//     await updateLogs(jobId, `@ No existing container ${containerName} to stop`);
+//   }
+// }
+
 async function stopAndRemoveContainer(containerName: string, jobId: string) {
   try {
-    await runCommandWithLogs("docker", ["inspect", containerName], ".", jobId);
-    await runCommandWithLogs("docker", ["stop", containerName], ".", jobId);
-    await runCommandWithLogs("docker", ["rm", containerName], ".", jobId);
+    await runCommandWithLogs("docker", ["rm", "-f", containerName], ".", jobId);
+    await updateLogs(jobId, `$ Removed old container: ${containerName}`);
   } catch {
-    await updateLogs(jobId, `@ No existing container ${containerName} to stop`);
+    await updateLogs(jobId, `@ No existing container to remove: ${containerName}`);
   }
 }
 

@@ -21,7 +21,7 @@ export async function runCommandWithLogs(
       const lines = stdout.trim().split("\n");
       for (const line of lines) {
         console.log(line);
-        await updateLogs(projectId, line.trim());
+        await updateLogs(projectId, `  ${line.trim()}`);
       }
     }
 
@@ -29,7 +29,7 @@ export async function runCommandWithLogs(
       const lines = stderr.trim().split("\n");
       for (const line of lines) {
         console.error(line);
-        await updateLogs(projectId, line.trim());
+        await updateLogs(projectId, `  ${line.trim()}`);
       }
     }
   } catch (err: any) {
