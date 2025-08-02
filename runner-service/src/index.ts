@@ -11,6 +11,7 @@ import path from "path";
 import fs from "fs-extra";
 import { runCommandWithLogs } from "./utils/command";
 import { updateLogs } from "./utils/logger";
+import { exec } from "child_process";
 
 if (
   !process.env.SUPABASE_URL ||
@@ -75,14 +76,53 @@ async function updateViteConfig(dir: string, projectId: string) {
 //   }
 // }
 
-async function stopAndRemoveContainer(containerName: string, jobId: string) {
-  try {
-    await runCommandWithLogs("docker", ["rm", "-f", containerName], ".", jobId);
-    await updateLogs(jobId, `$ Removed old container: ${containerName}`);
-  } catch {
-    await updateLogs(jobId, `@ No existing container to remove: ${containerName}`);
-  }
-}
+export const stopAndRemoveContainer = async (
+  imageName: string,
+  jobId: string
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const listContainers = `docker ps -a --filter ancestor=${imageName} --format "{{.ID}}"`;
+
+    exec(listContainers, async (err, stdout, stderr) => {
+      if (err) {
+        console.error("Error listing containers:", stderr);
+        return reject(err);
+      }
+
+      const containerIds = stdout.split("\n").filter(Boolean);
+
+      if (containerIds.length === 0) {
+        console.log(`No running containers found for image: ${imageName}`);
+      } else {
+        await updateLogs(
+          jobId,
+          `$ Cleaning Old Docker Containers and Image...`
+        );
+      }
+
+      const stopRemoveCommands = containerIds
+        .map((id) => `docker rm -f ${id}`)
+        .join(" && ");
+
+      const finalCommand = stopRemoveCommands
+        ? `${stopRemoveCommands} && docker rmi -f ${imageName}`
+        : `docker rmi -f ${imageName}`;
+
+      exec(finalCommand, (err2, stdout2, stderr2) => {
+        if (err2) {
+          console.error(
+            `Failed to remove container/image for ${imageName}:`,
+            stderr2
+          );
+          return reject(err2);
+        }
+        resolve();
+      });
+
+      await updateLogs(jobId, `$ Cleaned up old Containes...`);
+    });
+  });
+};
 
 async function processJob(job: Project) {
   console.log("🔧 Processing:", job.project_name);
@@ -159,7 +199,14 @@ async function processJob(job: Project) {
 
       await updateLogs(job.id, `$🎉🎉 React app deployed at: ${deployedUrl}`);
     } else {
-      const port = await getAvailablePort();
+      const port = job.port == null ? await getAvailablePort() : job.port;
+
+      // if(job.port != null) {
+      //   port = job.port;
+      // } else {
+      //   port = await getAvailablePort();
+      // }
+
       const dockerfilePath = path.join(dir, "Dockerfile");
       const isTSProject = fs.existsSync(path.join(dir, "tsconfig.json"));
 

@@ -50,7 +50,7 @@ export const createProject = async (req: Request, res: Response) => {
           framework,
           status: "queued",
           logs: "",
-          port: null,
+          // port,
           deployed_url: "", 
           total_deployments: existingProject.total_deployments + 1
         })
@@ -65,10 +65,9 @@ export const createProject = async (req: Request, res: Response) => {
         });
       }
 
-      // CRITICAL FIX: Send flat object to Redis, not nested
       await redis.lpush(
         "build-queue",
-        JSON.stringify(updatedProject) // Send updatedProject directly, not wrapped
+        JSON.stringify(updatedProject) 
       );
 
       return res.json({
