@@ -44,7 +44,7 @@ export const sendDeploymentMail = async ({
         
         <!-- Header -->
         <div style="background: #000000; color: #ffffff; padding: 40px 30px; text-align: center;">
-          <h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Deployment Successful</h1>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Deployment Successfull</h1>
         </div>
         
         <!-- Content -->
@@ -69,10 +69,10 @@ export const sendDeploymentMail = async ({
                 <td style="padding: 8px 0; color: #000000;">${deploymentTime}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; font-weight: 600; color: #495057; width: 120px; vertical-align: top;">Live URL:</td>
+                <td style="padding: 8px 0; font-weight: 600; color: #495057; width: 120px; vertical-align: top;">Source:</td>
                 <td style="padding: 8px 0;">
-                  <a href="${deployedUrl}" target="_blank" style="color: #000000; text-decoration: none; font-weight: 500; border-bottom: 1px solid #000000; padding-bottom: 1px;">
-                    ${deployedUrl}
+                  <a href="https://github.com/${userData.name}/${projectName}" target="_blank" style="color: #000000; text-decoration: none; font-weight: 500; border-bottom: 1px solid #000000; padding-bottom: 1px;">
+                    ${userData.name}/${projectName}
                   </a>
                 </td>
               </tr>
@@ -94,13 +94,6 @@ export const sendDeploymentMail = async ({
               — Priyanshu Valiya
             </p>
           </div>
-        </div>
-        
-        <!-- Footer -->
-        <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
-          <p style="margin: 0; font-size: 12px; color: #6c757d;">
-            This is an automated message. Please do not reply to this email.
-          </p>
         </div>
       </div>
     </div>
