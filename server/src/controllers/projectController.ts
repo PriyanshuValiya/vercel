@@ -152,8 +152,6 @@ export const getProjects = async (req: Request, res: Response) => {
 };
 
 export const triggerCreateProject = async (req: Request, res: Response) => {
-  //console.log(req.body);
-
   try {
     const userName = req.body?.repository.owner.name;
     const repoUrl = req.body?.repository.clone_url;
@@ -168,11 +166,13 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
       return res.status(500).json({ error: errorUserData });
     } 
 
+    console.log("% :", userData.id, repoUrl);
+
     const { data: projectData, error: errorProjectData } = await supabase
       .from("projects")
       .select("*")
-      .eq("user_id", userData.id)
-      .eq("repo_url", repoUrl);
+      .eq("user_id", userData.id);
+      //.eq("repo_url", repoUrl);
 
     if (errorProjectData) {
       return res.status(500).json({ error: errorUserData });
