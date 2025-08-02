@@ -45,12 +45,11 @@ export const sendDeploymentMail = async ({
         <!-- Header -->
         <div style="background: #000000; color: #ffffff; padding: 40px 30px; text-align: center;">
           <h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Deployment Successful</h1>
-          <div style="width: 60px; height: 4px; background: #ffffff; margin: 20px auto 0; border-radius: 2px;"></div>
         </div>
         
         <!-- Content -->
         <div style="padding: 40px 30px;">
-          <p style="margin: 0 0 24px 0; font-size: 16px; color: #495057;">Hello,</p>
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #495057;">Hello, ${userData.name}</p>
           
           <p style="margin: 0 0 32px 0; font-size: 16px; color: #495057;">
             Your project <strong style="color: #000000;">${projectName}</strong> has been successfully deployed and is now live.
