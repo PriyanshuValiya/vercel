@@ -26,72 +26,93 @@ export const createProject = async (req: Request, res: Response) => {
   const { repo_url, framework, env_variables, user_id } = req.body;
   const project_name = repo_url.split("/").pop()?.replace(".git", "");
 
-  const { data: existingProjects, error: fetchError } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("repo_url", repo_url)
-    .eq("user_id", user_id);
-
-  if (fetchError) {
-    return res.status(500).json({ error: fetchError.message });
-  }
-
-  const existingProject = existingProjects?.[0]; 
-
-  if (existingProject) {
-    const { error: updateError } = await supabase
+  try {
+    const { data: existingProjects, error: fetchError } = await supabase
       .from("projects")
-      .update({
-        env_variables,
-        framework,
-        status: "queued",
-        logs: "",
-        port: null,
-        deployed_url: "", 
-        total_deployments: existingProject.total_deployments + 1
-      })
-      .eq("id", existingProject.id);
+      .select("*")
+      .eq("repo_url", repo_url)
+      .eq("user_id", user_id);
 
-    if (updateError) {
-      return res.status(500).json({ error: updateError.message });
+    if (fetchError) {
+      return res.status(500).json({
+        success: false,
+        error: fetchError.message,
+      });
     }
 
-    await redis.lpush(
-      "build-queue",
-      JSON.stringify({ ...existingProject, env_variables, framework })
-    );
+    const existingProject = existingProjects?.[0];
 
-    return res.json({
-      message: "Project re-queued for redeploy",
-      id: existingProject.id,
+    if (existingProject) {
+      const { data: updatedProject, error: updateError } = await supabase
+        .from("projects")
+        .update({
+          env_variables,
+          framework,
+          status: "queued",
+          logs: "",
+          port: null,
+          deployed_url: "",
+          total_deployments: existingProject.total_deployments + 1,
+        })
+        .eq("id", existingProject.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        return res.status(500).json({
+          success: false,
+          error: updateError.message,
+        });
+      }
+
+      await redis.lpush(
+        "build-queue",
+        JSON.stringify({ updatedProject })
+      );
+
+      return res.json({
+        success: true,
+        message: "Project re-queued for redeploy",
+        project: updatedProject,
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({
+        repo_url,
+        project_name,
+        framework,
+        env_variables,
+        user_id,
+        status: "queued",
+        deployed_url: "",
+        total_deployments: 1,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    await redis.lpush("build-queue", JSON.stringify(data));
+
+    res.json({
+      success: true,
+      message: "New project queued",
+      project: data,
+    });
+  } catch (error) {
+    console.error("CreateProject error:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Internal server error",
     });
   }
-
-  const { data, error } = await supabase
-    .from("projects")
-    .insert({
-      repo_url,
-      project_name,
-      framework,
-      env_variables,
-      user_id,
-      status: "queued",
-      deployed_url: "",
-    })
-    .select();
-
-  if (error) {
-    return res.status(500).json({ error: error.message });
-  }
-
-  const newProject = data?.[0];
-
-  if (!newProject) {
-    return res.status(500).json({ error: "Failed to create new project" });
-  }
-
-  await redis.lpush("build-queue", JSON.stringify(newProject));
-  res.json({ message: "New project queued", id: newProject.id });
 };
 
 export const deleteProject = async (req: Request, res: Response) => {

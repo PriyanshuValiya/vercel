@@ -1,6 +1,7 @@
 "use client";
-
 import { useState, useEffect } from "react";
+import type React from "react";
+
 import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,26 +14,15 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  RefreshCcw,
 } from "lucide-react";
+import type { Project } from "@/types/types";
+import { Button } from "@/components/ui/button";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
-
-interface Project {
-  id: string;
-  user_id: string;
-  repo_url: string;
-  project_name: string;
-  framework: string;
-  env_variables: Record<string, string>;
-  status: "queued" | "building" | "deployed" | "failed";
-  deployed_url: string | null;
-  port: number | null;
-  created_at: string;
-  logs: string | null;
-}
 
 interface DeploymentClientProps {
   initialProject: Project;
@@ -43,6 +33,7 @@ export default function DeploymentClient({
 }: DeploymentClientProps) {
   const [project, setProject] = useState<Project>(initialProject);
   const [isPolling, setIsPolling] = useState(false);
+  const [isRedeploying, setIsRedeploying] = useState(false);
 
   const isDeploying =
     project.status === "building" || project.status === "queued";
@@ -59,8 +50,6 @@ export default function DeploymentClient({
 
         if (data && !error) {
           setProject(data);
-
-          // Stop polling if deployment is complete
           if (data.status === "deployed" || data.status === "failed") {
             setIsPolling(false);
             clearInterval(interval);
@@ -74,11 +63,6 @@ export default function DeploymentClient({
       };
     }
   }, [project.id, isDeploying]);
-
-  // useEffect(() => {
-  //   console.log(project.status);
-  //   setProject({ ...project, status: project.status });
-  // }, [project]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -112,14 +96,12 @@ export default function DeploymentClient({
 
   const formatLogs = (logs: string | null) => {
     if (!logs) return [];
-
     return logs
       .split("\n")
       .filter((line) => line.trim())
       .map((line, index) => {
         let color = "text-gray-700";
         let icon = null;
-
         if (line.startsWith("$")) {
           color = "text-green-600";
           icon = <CheckCircle className="w-3 h-3 mr-2 flex-shrink-0 mt-0.5" />;
@@ -130,7 +112,6 @@ export default function DeploymentClient({
           color = "text-yellow-600";
           icon = <AlertCircle className="w-3 h-3 mr-2 flex-shrink-0 mt-0.5" />;
         }
-
         return {
           id: index,
           text: line.substring(1),
@@ -154,6 +135,58 @@ export default function DeploymentClient({
   };
 
   const logEntries = formatLogs(project.logs);
+
+const handleRedeploy = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  event.preventDefault();
+  setIsRedeploying(true);
+
+  // Optimistic update
+  setProject((prev) => ({
+    ...prev,
+    logs: "",
+    status: "queued",
+  }));
+
+  try {
+    const deployResponse = await fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          repo_url: project.repo_url,
+          framework: project.framework,
+          env_variables: project.env_variables,
+          user_id: project.user_id,
+        }),
+      }
+    );
+
+    const deployData = await deployResponse.json();
+
+    if (!deployResponse.ok) {
+      throw new Error(
+        `HTTP ${deployResponse.status}: ${deployData.error || 'Unknown error'}`
+      );
+    }
+
+    if (deployData.success && deployData.project) {
+      setProject(deployData.project);
+      // Start polling immediately for the new deployment
+      setIsPolling(true);
+    } else {
+      throw new Error(deployData.error || "Invalid response format");
+    }
+    
+  } catch (error) {
+    console.error("Redeployment error:", error);
+    setProject(initialProject);
+  } finally {
+    setIsRedeploying(false);
+  }
+};
 
   return (
     <div className="container mx-auto p-6 max-w-8xl px-12">
@@ -183,14 +216,13 @@ export default function DeploymentClient({
                     href={project.repo_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600"
+                    className="text-blue-600 hover:underline"
                   >
                     {getRepoName(project.repo_url)}
                   </a>
                 </span>
               </div>
             </div>
-
             <div className="flex">
               <div className="w-[50%]">
                 <label className="text-base font-medium text-muted-foreground">
@@ -205,29 +237,56 @@ export default function DeploymentClient({
         {/* Deployment Status */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Globe className="w-5 h-5" />
-              <p className="text-xl">Deployment Status</p>
+            <CardTitle className="flex justify-between items-center gap-2">
+              <div className="flex gap-x-2 items-center">
+                <Globe className="w-5 h-5" />
+                <p className="text-xl">Deployment Status</p>
+              </div>
+              <div>
+                <Button
+                  variant="outline"
+                  onClick={handleRedeploy}
+                  disabled={isRedeploying || isDeploying}
+                >
+                  {isRedeploying ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCcw className="w-4 h-4 mr-2" />
+                  )}
+                  {isRedeploying ? "Redeploying..." : "Redeploy"}
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <label className="text-base font-medium text-muted-foreground">
-                Status
-              </label>
-              <div className="mt-1">
-                <Badge
-                  className={`${getStatusColor(
-                    project.status
-                  )} flex items-center gap-1 w-fit`}
-                >
-                  {getStatusIcon(project.status)}
-                  {project.status.charAt(0).toUpperCase() +
-                    project.status.slice(1)}
-                </Badge>
+            <div className="flex gap-x-10">
+              <div>
+                <label className="text-base font-medium text-muted-foreground">
+                  Status
+                </label>
+                <div className="mt-1">
+                  <Badge
+                    className={`${getStatusColor(
+                      project.status
+                    )} flex items-center gap-1 w-fit`}
+                  >
+                    {getStatusIcon(project.status)}
+                    {project.status.charAt(0).toUpperCase() +
+                      project.status.slice(1)}
+                  </Badge>
+                </div>
               </div>
+              {project.deployed_url && (
+                <div>
+                  <label className="text-base font-medium text-muted-foreground">
+                    Total Deployments
+                  </label>
+                  <div className="mt-1">
+                    <Badge variant="outline">{project.total_deployments}</Badge>
+                  </div>
+                </div>
+              )}
             </div>
-
             {project.deployed_url && (
               <div>
                 <label className="text-base font-medium text-muted-foreground">
@@ -239,6 +298,7 @@ export default function DeploymentClient({
                       href={project.deployed_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="hover:underline"
                     >
                       {project.deployed_url}
                     </a>
@@ -249,26 +309,6 @@ export default function DeploymentClient({
           </CardContent>
         </Card>
       </div>
-
-      {/* Environment Variables */}
-      {/* {project.env_variables && Object.keys(project.env_variables).length > 0 && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Environment Variables</CardTitle>
-            <CardDescription>Environment variables configured for this deployment</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {Object.entries(project.env_variables).map(([key]) => (
-                <div key={key} className="flex items-center justify-between p-2 bg-muted rounded">
-                  <span className="font-mono text-sm">{key}</span>
-                  <span className="font-mono text-sm text-muted-foreground">{"*".repeat(8)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )} */}
 
       {/* Deployment Logs */}
       <Card className="mt-6">

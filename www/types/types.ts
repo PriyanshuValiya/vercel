@@ -17,6 +17,7 @@ export interface Project {
   env_variables: object;
   logs: string;
   port: number | null;
+  total_deployments: number;
   status: string;
   created_at: string;
 }

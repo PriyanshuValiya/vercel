@@ -65,10 +65,7 @@ async function updateViteConfig(dir: string, projectId: string) {
   await fs.writeFile(configPath, configContent);
 }
 
-async function stopAndRemoveContainer(
-  containerName: string,
-  jobId: string
-) {
+async function stopAndRemoveContainer(containerName: string, jobId: string) {
   try {
     await runCommandWithLogs("docker", ["inspect", containerName], ".", jobId);
     await runCommandWithLogs("docker", ["stop", containerName], ".", jobId);
@@ -271,7 +268,7 @@ async function startPolling() {
     } catch (err) {
       console.error("# Failed to parse job JSON:", jobString);
     }
-  }, 8000);
+  }, 5000);
 }
 
 startPolling();
