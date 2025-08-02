@@ -34,15 +34,16 @@ export const createProject = async (req: Request, res: Response) => {
       .eq("user_id", user_id);
 
     if (fetchError) {
-      return res.status(500).json({
-        success: false,
-        error: fetchError.message,
+      return res.status(500).json({ 
+        success: false, 
+        error: fetchError.message 
       });
     }
 
     const existingProject = existingProjects?.[0];
 
     if (existingProject) {
+      // Update existing project
       const { data: updatedProject, error: updateError } = await supabase
         .from("projects")
         .update({
@@ -51,33 +52,35 @@ export const createProject = async (req: Request, res: Response) => {
           status: "queued",
           logs: "",
           port: null,
-          deployed_url: "",
-          total_deployments: existingProject.total_deployments + 1,
+          deployed_url: "", 
+          total_deployments: existingProject.total_deployments + 1
         })
         .eq("id", existingProject.id)
         .select()
         .single();
 
       if (updateError) {
-        return res.status(500).json({
-          success: false,
-          error: updateError.message,
+        return res.status(500).json({ 
+          success: false, 
+          error: updateError.message 
         });
       }
 
+      // CRITICAL FIX: Send flat object to Redis, not nested
       await redis.lpush(
         "build-queue",
-        JSON.stringify({ updatedProject })
+        JSON.stringify(updatedProject) // Send updatedProject directly, not wrapped
       );
 
       return res.json({
         success: true,
         message: "Project re-queued for redeploy",
-        project: updatedProject,
+        project: updatedProject
       });
     }
 
-    const { data, error } = await supabase
+    // Handle new project creation
+    const { data: newProject, error } = await supabase
       .from("projects")
       .insert({
         repo_url,
@@ -87,30 +90,31 @@ export const createProject = async (req: Request, res: Response) => {
         user_id,
         status: "queued",
         deployed_url: "",
-        total_deployments: 1,
+        total_deployments: 1
       })
       .select()
       .single();
 
     if (error) {
-      return res.status(500).json({
-        success: false,
-        error: error.message,
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
       });
     }
 
-    await redis.lpush("build-queue", JSON.stringify(data));
-
-    res.json({
+    await redis.lpush("build-queue", JSON.stringify(newProject));
+    
+    return res.json({ 
       success: true,
-      message: "New project queued",
-      project: data,
+      message: "New project queued", 
+      project: newProject 
     });
+
   } catch (error) {
     console.error("CreateProject error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Internal server error",
+    return res.status(500).json({ 
+      success: false, 
+      error: "Internal server error" 
     });
   }
 };
