@@ -31,38 +31,81 @@ export const sendDeploymentMail = async ({
       .single();
 
     if (errorUserData) {
-        throw new Error("Can't find User to mail !!");
+      throw new Error("Can't find User to mail !!");
     }
-
-    console.log(userData.email, projectName, deployedUrl, framework, deploymentTime);
 
     const { data, error } = await resend.emails.send({
       from: "vercel@notifications.priyanshuvaliya.me",
       to: userData.email,
-      subject: `${projectName} Deployed Successfully `,
+      subject: `${projectName} Deployed Successfully`,
       html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;">
-          <div style="max-width: 600px; margin: auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <div style="background: #00b894; color: white; padding: 20px;">
-              <h2>Deployment Successful!</h2>
-            </div>
-            <div style="padding: 20px;">
-              <p>Hi there,</p>
-              <p>Your project <strong>${projectName}</strong> has been successfully deployed 🎉</p>
-
-              <h3 style="margin-top: 20px;">Project Summary:</h3>
-              <ul style="line-height: 1.8;">
-                <li><strong>Framework:</strong> ${framework}</li>
-                <li><strong>Deployed At:</strong> ${deploymentTime}</li>
-                <li><strong>Live URL:</strong> <a href="${deployedUrl}" target="_blank">${deployedUrl}</a></li>
-              </ul>
-
-              <p style="margin-top: 30px;">Thank you for using our deployment service.</p>
-              <p>– The Vercel Clone Team</p>
-            </div>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f8f9fa; padding: 40px 20px;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid #e9ecef;">
+        
+        <!-- Header -->
+        <div style="background: #000000; color: #ffffff; padding: 40px 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">Deployment Successful</h1>
+          <div style="width: 60px; height: 4px; background: #ffffff; margin: 20px auto 0; border-radius: 2px;"></div>
+        </div>
+        
+        <!-- Content -->
+        <div style="padding: 40px 30px;">
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #495057;">Hello,</p>
+          
+          <p style="margin: 0 0 32px 0; font-size: 16px; color: #495057;">
+            Your project <strong style="color: #000000;">${projectName}</strong> has been successfully deployed and is now live.
+          </p>
+          
+          <!-- Project Details -->
+          <div style="background: #f8f9fa; border-radius: 8px; padding: 24px; margin: 32px 0; border-left: 4px solid #000000;">
+            <h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #000000;">Project Details</h2>
+            
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #495057; width: 120px; vertical-align: top;">Framework:</td>
+                <td style="padding: 8px 0; color: #000000;">${framework}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #495057; width: 120px; vertical-align: top;">Deployed:</td>
+                <td style="padding: 8px 0; color: #000000;">${deploymentTime}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #495057; width: 120px; vertical-align: top;">Live URL:</td>
+                <td style="padding: 8px 0;">
+                  <a href="${deployedUrl}" target="_blank" style="color: #000000; text-decoration: none; font-weight: 500; border-bottom: 1px solid #000000; padding-bottom: 1px;">
+                    ${deployedUrl}
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${deployedUrl}" target="_blank" style="display: inline-block; background: #000000; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; transition: all 0.2s ease;">
+              View Live Site
+            </a>
+          </div>
+          
+          <div style="border-top: 1px solid #e9ecef; padding-top: 24px; margin-top: 40px;">
+            <p style="margin: 0 0 8px 0; font-size: 16px; color: #495057;">
+              Thank you for using our deployment service.
+            </p>
+            <p style="margin: 0; font-size: 14px; color: #6c757d; font-weight: 500;">
+              — Priyanshu Valiya
+            </p>
           </div>
         </div>
-      `,
+        
+        <!-- Footer -->
+        <div style="background: #f8f9fa; padding: 20px 30px; text-align: center; border-top: 1px solid #e9ecef;">
+          <p style="margin: 0; font-size: 12px; color: #6c757d;">
+            This is an automated message. Please do not reply to this email.
+          </p>
+        </div>
+      </div>
+    </div>
+  `,
     });
 
     if (error) {
