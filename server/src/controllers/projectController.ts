@@ -168,6 +168,8 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
 
     if (errorUserData) {
       return res.status(500).json({ error: errorUserData });
+    } else {
+      console.log("User:", userData);
     }
 
     const { data: projectData, error: errorProjectData } = await supabase
@@ -179,6 +181,8 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
 
     if (errorProjectData) {
       return res.status(500).json({ error: errorUserData });
+    } else {
+      console.log("Project:", projectData);
     }
 
     console.log(projectData);
