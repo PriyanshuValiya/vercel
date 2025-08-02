@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import redis from "../utils/redis";
 import supabase from "../utils/supabase";
+import fetch from "node-fetch";
 
 export const getRepos = async (req: Request, res: Response) => {
   const { githubToken } = req.headers;
@@ -164,28 +165,39 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
 
     if (errorUserData) {
       return res.status(500).json({ error: errorUserData });
-    } 
-
-    console.log("% :", userData.id, repoUrl);
+    }
 
     const { data: projectData, error: errorProjectData } = await supabase
       .from("projects")
-      .select("*")
+      .select("user_id, repo_url, framework, env_variables")
       .eq("user_id", userData.id)
       .eq("repo_url", repoUrl)
       .single();
 
     if (errorProjectData) {
       return res.status(500).json({ error: errorUserData });
-    } else {
-      console.log("Project:", projectData);
     }
 
-    console.log(projectData);
+    const response = await fetch("https://vercel.priyanshuvaliya.me/api/project", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        repo_url: projectData.repo_url,
+        framework: projectData.framework,
+        env_variables: projectData.env_variables,
+        user_id: projectData.user_id,
+      }),
+    });
 
-    return res
-      .status(200)
-      .json({ success: true, message: "Webhook Triggered Successfully..." });
+    const result = await response.json();
+
+    return res.status(200).json({
+      success: true,
+      message: "Webhook Triggered & Deployment Started",
+      projectResponse: result
+    });
   } catch (err) {
     console.error("Error in Trigger Webhook :", err);
     return res.status(400).json({ error: err });
