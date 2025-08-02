@@ -271,7 +271,7 @@ async function processJob(job: Project) {
         job.id
       );
 
-      await updateLogs(job.id, `$ Running Docker container...`);
+      await updateLogs(job.id, `$ Running Docker container on ${port}...`);
       await runCommandWithLogs(
         "docker",
         ["run", "-d", "-p", `${port}:3000`, "--name", imageName, imageName],
