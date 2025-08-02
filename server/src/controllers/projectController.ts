@@ -27,6 +27,8 @@ export const createProject = async (req: Request, res: Response) => {
   const { repo_url, framework, env_variables, user_id } = req.body;
   const project_name = repo_url.split("/").pop()?.replace(".git", "");
 
+  console.log("=> ", repo_url, framework, env_variables, user_id);
+
   try {
     const { data: existingProjects, error: fetchError } = await supabase
       .from("projects")
@@ -74,7 +76,6 @@ export const createProject = async (req: Request, res: Response) => {
       });
     }
 
-    // Handle new project creation
     const { data: newProject, error } = await supabase
       .from("projects")
       .insert({
@@ -95,8 +96,6 @@ export const createProject = async (req: Request, res: Response) => {
         success: false,
         error: error.message,
       });
-    } else {
-      console.log("New :", newProject);
     }
 
     await redis.lpush("build-queue", JSON.stringify(newProject));
@@ -157,6 +156,8 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
     const userName = req.body?.repository.owner.name;
     const repoUrl = req.body?.repository.clone_url;
 
+    console.log("=> ", userName, repoUrl);
+
     const { data: userData, error: errorUserData } = await supabase
       .from("users")
       .select("*")
@@ -176,6 +177,8 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
 
     if (errorProjectData) {
       return res.status(500).json({ error: errorUserData });
+    } else {
+      console.log("=>", projectData);
     }
 
     const response = await axios.post("https://vercel.priyanshuvaliya.me/api/project", {
