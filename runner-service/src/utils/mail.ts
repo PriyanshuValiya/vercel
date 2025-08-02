@@ -34,6 +34,8 @@ export const sendDeploymentMail = async ({
         throw new Error("Can't find User to mail !!");
     }
 
+    console.log(userData.email, projectName, deployedUrl, framework, deploymentTime);
+
     const { data, error } = await resend.emails.send({
       from: "vercel@priyanshuvaliya.me",
       to: userData.email,
@@ -67,7 +69,7 @@ export const sendDeploymentMail = async ({
       console.error("Failed to send email:", error);
     }
 
-    return { success: true, message: "Email sent successfully." };
+    return { success: true, message: "Email sent successfully.." };
   } catch (err) {
     console.error("Error sending deployment email:", err);
     return { success: false, error: err };
