@@ -153,6 +153,7 @@ async function processJob(job: Project) {
       await updateLogs(job.id, "$ Project built successfully...");
 
       const possibleDirs = ["dist", "build", "out"];
+
       let buildPath = "";
       for (const dirName of possibleDirs) {
         const fullPath = path.join(dir, dirName);
@@ -180,7 +181,7 @@ async function processJob(job: Project) {
       writeNginxRoute(job.id, false);
       reloadNginx();
 
-      await fs.remove(dir);
+      // await fs.remove(dir);
       await updateLogs(job.id, `$ Cleaned up local build...`);
 
       await supabase
