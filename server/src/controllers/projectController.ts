@@ -48,6 +48,7 @@ export const createProject = async (req: Request, res: Response) => {
         logs: "",
         port: null,
         deployed_url: "", 
+        total_deployments: existingProject.total_deployments + 1
       })
       .eq("id", existingProject.id);
 
