@@ -17,6 +17,9 @@ This repository contains a monorepo implementation of a Vercel-like deployment p
 - Redis and Supabase integration for data management
 - S3 support for file uploads
 
+## Demo Video
+[🎥 Watch Demo](https://github.com/PriyanshuValiya/vercel/blob/main/Vercel%20Demo%20Video.mp4)
+
 ## Getting Started
 
 1. **Clone the repository:**
