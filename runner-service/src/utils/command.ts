@@ -11,17 +11,18 @@ export async function runCommandWithLogs(
   projectId: string
 ): Promise<void> {
   const fullCommand = `${command} ${args.join(" ")}`;
+
   try {
     const { stdout, stderr } = await execPromise(fullCommand, {
       cwd,
-      maxBuffer: 1024 * 1024 * 10, 
+      maxBuffer: 1024 * 1024 * 10,
     });
 
     if (stdout) {
       const lines = stdout.trim().split("\n");
       for (const line of lines) {
         console.log(line);
-        await updateLogs(projectId, `  ${line.trim()}`);
+        await updateLogs(projectId, ` ${line.trim()}`);
       }
     }
 
@@ -29,7 +30,7 @@ export async function runCommandWithLogs(
       const lines = stderr.trim().split("\n");
       for (const line of lines) {
         console.error(line);
-        await updateLogs(projectId, `  ${line.trim()}`);
+        await updateLogs(projectId, ` ${line.trim()}`);
       }
     }
   } catch (err: any) {

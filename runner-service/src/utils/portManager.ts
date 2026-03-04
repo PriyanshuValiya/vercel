@@ -1,13 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-
-if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("Missing Supabase environment variables in port manager !!");
-}
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import supabase from "./supabase";
 
 let basePort = 8000;
 const usedPorts = new Set<number>();

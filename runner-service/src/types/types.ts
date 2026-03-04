@@ -3,9 +3,9 @@ export interface Project {
   user_id: string;
   repo_url: string;
   project_name: string;
-  framework: 'React' | 'Node';
+  framework: "React" | "Node";
   env_variables: Record<string, string>;
-  status: 'queued' | 'building' | 'deployed' | 'error';
+  status: "queued" | "building" | "deployed" | "error";
   deployed_url: string;
   port?: number;
   created_at?: string;

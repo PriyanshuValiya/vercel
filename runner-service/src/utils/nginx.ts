@@ -7,7 +7,7 @@ import { exec } from "child_process";
 
 if (!process.env.S3_BUCKET || !process.env.AWS_REGION) {
   throw new Error(
-    "Missing required environment variables: S3_BUCKET or AWS_REGION in runner service !!"
+    "Missing required environment variables: S3_BUCKET or AWS_REGION in runner service !!",
   );
 }
 
@@ -19,7 +19,7 @@ const nginxRoutePath =
 export function writeNginxRoute(
   projectId: string,
   isNode: boolean,
-  port?: number
+  port?: number,
 ) {
   if (!fs.existsSync(nginxRoutePath)) {
     fs.mkdirSync(nginxRoutePath, { recursive: true });
@@ -28,20 +28,18 @@ export function writeNginxRoute(
   const filePath = path.join(nginxRoutePath, `${projectId}.conf`);
 
   const config = isNode
-    ? `
-location /${projectId}/ {
-    proxy_pass http://localhost:${port}/;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_cache_bypass $http_upgrade;
-    rewrite ^/${projectId}/(.*)$ /$1 break;
+    ? `location /${projectId}/ {
+  proxy_pass http://localhost:${port}/;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection 'upgrade';
+  proxy_set_header Host $host;
+  proxy_cache_bypass $http_upgrade;
+  rewrite ^/${projectId}/(.*)$ /$1 break;
 }`.trim()
-    : `
-location /${projectId}/ {
-    proxy_pass https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${projectId}/;
-    rewrite ^/${projectId}/(.*)$ /$1 break;
+    : `location /${projectId}/ {
+  proxy_pass https://${process.env.S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${projectId}/;
+  rewrite ^/${projectId}/(.*)$ /$1 break;
 }`.trim();
 
   try {

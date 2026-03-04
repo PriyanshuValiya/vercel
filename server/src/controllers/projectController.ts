@@ -1,21 +1,21 @@
 import { Request, Response } from "express";
 import redis from "../utils/redis";
 import supabase from "../utils/supabase";
-import axios from 'axios';
+import axios from "axios";
 
+// GET /api/repos
 export const getRepos = async (req: Request, res: Response) => {
-  const { githubToken } = req.headers;
+  const { githubtoken } = req.headers;
 
   try {
     const response = await fetch(
       "https://api.github.com/user/repos?per_page=100",
       {
         headers: {
-          Authorization: `Bearer ${githubToken}`,
+          Authorization: `Bearer ${githubtoken}`,
         },
       }
     );
-
     const repos = await response.json();
     res.status(200).json({ message: "Repos fetched successfully...", repos });
   } catch (err) {
@@ -23,8 +23,24 @@ export const getRepos = async (req: Request, res: Response) => {
   }
 };
 
+// POST /api/project
 export const createProject = async (req: Request, res: Response) => {
   const { repo_url, framework, env_variables, user_id } = req.body;
+
+  if (!repo_url || !framework || !user_id) {
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields: repo_url, framework, user_id",
+    });
+  }
+
+  if (framework !== "React" && framework !== "Node") {
+    return res.status(400).json({
+      success: false,
+      error: "framework must be either 'React' or 'Node'",
+    });
+  }
+
   const project_name = repo_url.split("/").pop()?.replace(".git", "");
 
   try {
@@ -112,6 +128,7 @@ export const createProject = async (req: Request, res: Response) => {
   }
 };
 
+// DELETE /api/project/:id
 export const deleteProject = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -121,10 +138,38 @@ export const deleteProject = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 
-  await redis.lrem("build-queue", 0, id);
+  try {
+    const queueLength = await redis.llen("build-queue");
+
+    if (queueLength > 0) {
+      const allItems = await redis.lrange("build-queue", 0, queueLength - 1);
+
+      const filtered = allItems.filter((item) => {
+        try {
+          const parsed = JSON.parse(item);
+          return parsed.id !== id;
+        } catch (err) {
+          return true;
+        }
+      });
+
+      if (filtered.length !== allItems.length) {
+        const pipeline = redis.pipeline();
+        pipeline.del("build-queue");
+        if (filtered.length > 0) {
+          pipeline.rpush("build-queue", ...filtered);
+        }
+        await pipeline.exec();
+      }
+    }
+  } catch (redisError) {
+    console.error("Failed to remove job from Redis queue:", redisError);
+  }
+
   res.json({ message: "Project deleted" });
 };
 
+// GET /api/project
 export const getProjects = async (req: Request, res: Response) => {
   const { userId } = req.query;
 
@@ -139,7 +184,9 @@ export const getProjects = async (req: Request, res: Response) => {
       .eq("user_id", userId);
 
     if (userProjectError) {
-      return res.status(500).json({ success: false, error: userProjectError });
+      return res
+        .status(500)
+        .json({ success: false, error: userProjectError });
     }
 
     return res.status(200).json({ success: true, data: userProjectData });
@@ -149,10 +196,15 @@ export const getProjects = async (req: Request, res: Response) => {
   }
 };
 
+// POST /api/webhook
 export const triggerCreateProject = async (req: Request, res: Response) => {
   try {
-    const userName = req.body?.repository.owner.name;
-    const repoUrl = req.body?.repository.clone_url;
+    const userName = req.body?.repository?.owner?.name;
+    const repoUrl = req.body?.repository?.clone_url;
+
+    if (!userName || !repoUrl) {
+      return res.status(400).json({ error: "Missing repository payload" });
+    }
 
     const { data: userData, error: errorUserData } = await supabase
       .from("users")
@@ -172,22 +224,25 @@ export const triggerCreateProject = async (req: Request, res: Response) => {
       .single();
 
     if (errorProjectData) {
-      return res.status(500).json({ error: errorUserData });
-    } 
+      return res.status(500).json({ error: errorProjectData });
+    }
 
-    const response = await axios.post("https://vercel.priyanshuvaliya.me/api/project", {
-      repo_url: projectData.repo_url,
-      framework: projectData.framework,
-      env_variables: projectData.env_variables,
-      user_id: projectData.user_id
-    });
+    const response = await axios.post(
+      "https://vercel.priyanshuvaliya.dev/api/project",
+      {
+        repo_url: projectData.repo_url,
+        framework: projectData.framework,
+        env_variables: projectData.env_variables,
+        user_id: projectData.user_id,
+      }
+    );
 
     const result = response.data;
 
     return res.status(200).json({
       success: true,
       message: "Webhook Triggered & Deployment Started",
-      projectResponse: result
+      projectResponse: result,
     });
   } catch (err) {
     console.error("Error in Trigger Webhook :", err);

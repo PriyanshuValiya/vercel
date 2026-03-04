@@ -169,6 +169,7 @@ async function processJob(job: Project) {
 
       await updateLogs(job.id, `$ Found build folder: ${buildPath}`);
 
+      console.log(`Calling ${process.env.BASE_IP_URL!}/upload`);
       const response = await fetch(`${process.env.BASE_IP_URL!}/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -178,8 +179,8 @@ async function processJob(job: Project) {
       const { url: deployedUrl } = await response.json();
       await updateLogs(job.id, `$ Uploaded build to S3 successfully...`);
 
-      writeNginxRoute(job.id, false);
-      reloadNginx();
+      // writeNginxRoute(job.id, false);
+      // reloadNginx();
 
       await fs.remove(dir);
       await updateLogs(job.id, `$ Cleaned up local build...`);
@@ -276,8 +277,8 @@ async function processJob(job: Project) {
       );
 
       const deployedUrl = `${process.env.BASE_URL!}/${job.id}`;
-      writeNginxRoute(job.id, true, port);
-      reloadNginx();
+      // writeNginxRoute(job.id, true, port);
+      // reloadNginx();
 
       await fs.remove(dir);
       await updateLogs(job.id, `$ Cleaned up local build storage...`);

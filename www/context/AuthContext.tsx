@@ -9,7 +9,7 @@ export const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const mapUser = (user: any): User | null => {
@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         id: user.id,
         email: user.email ?? "",
         user_metadata: {
-          full_name: user.identities[0]?.identity_data?.preferred_username,
+          full_name: user.identities?.[0]?.identity_data?.preferred_username,
           avatar_url: user.user_metadata?.avatar_url,
         },
       };
@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const getSession = async () => {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
-
         const user = sessionData?.session?.user;
+
         if (!user) throw new Error("No user in session");
 
         const id = user.id;

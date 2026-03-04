@@ -52,7 +52,7 @@ export default function DashboardPage() {
       try {
         setIsLoadingProjects(true);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project?userId=${user.id}`
+          `http://127.0.0.1:4500/api/project?userId=${user.id}`
         );
         const data = await res.json();
         const sortedProjects = (data?.data || []).sort(

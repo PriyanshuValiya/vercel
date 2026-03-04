@@ -14,11 +14,11 @@ app.use(express.json());
 
 app.use("/api", projectRoutes);
 
-app.get("/:id", proxyController);
-
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Server running successfully...");
 });
+
+app.get("/:id", proxyController);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -81,8 +81,7 @@ function DeployPage() {
         return;
       }
 
-      const githubToken =
-        session?.provider_token || process.env.NEXT_PUBLIC_GITHUB_TOKEN;
+      const githubToken = process.env.NEXT_PUBLIC_GITHUB_TOKEN;
 
       const headers: Record<string, string> = {
         Accept: "application/vnd.github.v3+json",
@@ -218,7 +217,7 @@ function DeployPage() {
 
       // Make API call to deploy
       const deployResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project`,
+        `http://127.0.0.1:4500/api/project`,
         {
           method: "POST",
           headers: {
@@ -235,7 +234,6 @@ function DeployPage() {
 
       if (deployResponse.ok) {
         const result = await deployResponse.json();
-        console.log(result);
         router.push(`/deploy/${result?.project.id}`);
       } else {
         throw new Error(`Deployment failed: ${deployResponse.statusText}`);

@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import type React from "react";
 
-import { createClient } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,11 +17,7 @@ import {
 } from "lucide-react";
 import type { Project } from "@/types/types";
 import { Button } from "@/components/ui/button";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from "@/lib/supabase/client";
 
 interface DeploymentClientProps {
   initialProject: Project;
